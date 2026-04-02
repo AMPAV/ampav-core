@@ -6,14 +6,7 @@ readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "License :: OSI Approved :: Apache Software License",    
-]
-urls = [
-    Homepage = "https://github.com/AMPAV/ampav-core",
-    Repository = "https://github.com/AMPAV/ampav-core.git",
-    Issues = "https://github.com/AMPAV/ampav-core/issues",
-
+    "Development Status :: 2 - Pre-Alpha",   
 ]
 authors = [
     {name = "Brian Wheeler", email="bdwheele@iu.edu"},
@@ -24,6 +17,12 @@ dependencies = [
     "pydantic",
     "pyyaml"
 ]
+
+[project.urls]
+Homepage = "https://github.com/AMPAV/ampav-core"
+Repository = "https://github.com/AMPAV/ampav-core.git"
+Issues = "https://github.com/AMPAV/ampav-core/issues"
+
 
 
 [build-system]
