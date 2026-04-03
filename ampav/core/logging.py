@@ -1,5 +1,4 @@
 import logging
-import logging.handlers
 
 
 LOG_FORMAT = "%(asctime)s [%(levelname)-8s] (%(filename)s:%(lineno)d:%(process)d) %(message)s"

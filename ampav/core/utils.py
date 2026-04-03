@@ -37,3 +37,4 @@ def hhmmss2seconds(hhmmss: str) -> float:
         return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
     else:
         raise ValueError(f"Can't recognize format of {hhmmss}")
+ 
