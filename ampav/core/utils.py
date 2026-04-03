@@ -1,6 +1,8 @@
 """
 General purpos utilities
 """
+import yaml
+from pydantic import BaseModel
 
 def duration2hhmmss(duration: float) -> str:
     """
@@ -38,3 +40,8 @@ def hhmmss2seconds(hhmmss: str) -> float:
     else:
         raise ValueError(f"Can't recognize format of {hhmmss}")
  
+
+def pretty_yaml(thing: object, **kwargs) -> str:
+    if isinstance(thing, BaseModel):
+        thing = thing.model_dump(exclude_none=True)
+    return yaml.safe_dump(thing, **kwargs)
