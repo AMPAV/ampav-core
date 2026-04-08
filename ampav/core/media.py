@@ -1,8 +1,11 @@
 import argparse
 import av
 import av.container
+import av.audio.frame
+
 from fractions import Fraction
 from pathlib import Path
+import numpy as np
 import yaml
 
 def probe_media(filename: Path) -> dict:
@@ -71,6 +74,23 @@ def probe_media(filename: Path) -> dict:
                      'value': float(v)}
 
     return metadata
+
+
+def load_audio(file: Path, stream=0, sample_rate=16000, sample_size=16, layout='mono'):
+    container = av.open(file)
+    resampler = av.AudioResampler(format=f"s{sample_size}",
+                                  layout=layout,
+                                  rate=sample_rate)
+    frames = []
+    for frame in container.decode(audio=stream):
+        if isinstance(frame, av.audio.frame.AudioFrame):
+            reframe = resampler.resample(frame)
+            if reframe:
+                for f in reframe:
+                    frames.append(f.to_ndarray().reshape(-1))
+        
+    data = np.concatenate(frames, dtype=np.float32) if frames else np.array([], dtype=np.float32)
+    return data
 
 
 def media_to_wav():
