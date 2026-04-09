@@ -17,11 +17,10 @@ dependencies = [
     "pydantic",
     "pyyaml",
     "av",
-    "torch"
 ]
 
 [project.scripts]
-probe_media = "ampav.core.media:cli_probe_media"
+probe_media = "ampav.core.schema.av_metadata:cli_probe_media"
 
 
 [project.urls]
