@@ -3,15 +3,15 @@ from typing import Literal, Annotated, Union, Any
 from .basemodel import AmpAVBaseModel
 
 
-class TimeSegment(AmpAVBaseModel):
-    ampav_format: Literal['timesegment'] = 'timesegment'
+class Segment(AmpAVBaseModel):
+    ampav_format: Literal['timesegment'] = 'segment'
     ampav_format_version: Literal[1] = 1
     start_time: float | None= Field(None, description="Start time of the word")
     end_time: float | None = Field(None, description="End time of the word")
     tool_specific: dict[str, Any] | None = Field(None, description="Additional data provided by the tool")
 
 
-class TimedWordSegment(TimeSegment):
+class WordSegment(Segment):
     ampav_format: Literal['wordsegment'] = 'wordsegment'
     speaker: str | None = Field(None, description="Speaker of the word")
     prefix: str | None = Field(None, description="Word prefix data")
@@ -19,7 +19,7 @@ class TimedWordSegment(TimeSegment):
     suffix: str | None = Field(None, description="Word suffix data")
         
     @staticmethod
-    def from_str(word: str, **kwargs) -> "TimedWordSegment":
+    def from_str(word: str, **kwargs) -> "WordSegment":
         ixes = (''' ,.?![](){}<>;:''')
         if word[0] in ixes:
             prefix = word[0]
@@ -31,17 +31,17 @@ class TimedWordSegment(TimeSegment):
             word = word[:-1]
         else:
             suffix = None
-        return TimedWordSegment(word=word, prefix=prefix, suffix=suffix, **kwargs)
+        return WordSegment(word=word, prefix=prefix, suffix=suffix, **kwargs)
 
 
-class TimedParagraphSegment(TimeSegment):
+class ParagraphSegment(Segment):
     ampav_format: Literal['paragraph_segment'] = 'paragraph_segment'
     speaker: str | None = Field(None, description="Speaker of the paragraph")
     text: str | None = Field(None, description="Paragraph text")
 
 
 
-Segment = Annotated[Union[TimeSegment, TimedWordSegment, TimedParagraphSegment], Field(discriminator='ampav_format')]
+Segment = Annotated[Union[Segment, WordSegment, ParagraphSegment], Field(discriminator='ampav_format')]
 
 
 class Segments(AmpAVBaseModel):

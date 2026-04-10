@@ -5,6 +5,7 @@ from .av_metadata import AVMetadata
 from .transcript import Transcript
 from ..logging import ListLoggingHandler, LOG_FORMAT
 import logging
+from logging import LogRecord
 
 OutputTypes = Annotated[Union[AVMetadata, Transcript], Field(discriminator='ampav_format')]
 
@@ -45,14 +46,24 @@ class ToolOutput(AmpAVBaseModel):
             return None if r is None else r + q
 
 
-    def setup_logging(self, logger=None):
+    def setup_logging(self, logger=None, ignore: list[str]=[]):
         if logger is None:
             logger = logging.getLogger()
         
+        def filter(record: LogRecord):
+            for p in ignore:
+                if p.endswith('.') and record.name.startswith(p):
+                    return False
+                elif record.name == p:
+                    return False            
+            return True
+            
         formatter = logging.Formatter(LOG_FORMAT)
         handler = ListLoggingHandler(self.messages)
         handler.setFormatter(formatter)
-
+        handler.addFilter(filter)
+        logger.addHandler(handler)
+        
 
 
     

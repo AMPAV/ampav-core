@@ -1,6 +1,6 @@
 from ...schema.tool import ToolOutput
 from ...schema.transcript import Transcript
-from ...schema.segments import TimedParagraphSegment, TimedWordSegment
+from ...schema.segments import ParagraphSegment, WordSegment
 from itertools import pairwise
 import argparse
 import json
@@ -10,12 +10,12 @@ def import_threeplay_json(threeplay: dict) -> ToolOutput:
        a transcript tool output"""
     
     # read the paragraphs information to create the necessary time ranges
-    paragraph_segs: list[TimedParagraphSegment] = {}
+    paragraph_segs: list[ParagraphSegment] = {}
     word_segs = []
     for start, stop in pairwise(threeplay['paragraphs']):
         start /= 1000
         stop /= 1000
-        paragraph_segs[(start, stop)] = TimedParagraphSegment(start_time=start,
+        paragraph_segs[(start, stop)] = ParagraphSegment(start_time=start,
                                                               end_time=stop,
                                                               speaker=None,
                                                               text='')
@@ -42,14 +42,14 @@ def import_threeplay_json(threeplay: dict) -> ToolOutput:
             start = int(this[0]) / 1000
             end = int(next[0]) / 1000
             paridx = find_paridx(start)
-            word_segs.append(TimedWordSegment.from_str(this[1],
+            word_segs.append(WordSegment.from_str(this[1],
                                                     start_time=start,
                                                     end_time=end,
                                                     speaker=paragraph_segs[paridx].speaker))
             paragraph_segs[paridx].text += this[1] + " "
     
     # sort paragraphs, remove empty ones, and trim trailing whitespace
-    paragraphs: list[TimedParagraphSegment] = sorted(paragraph_segs.values(), key=lambda x: x.start_time)    
+    paragraphs: list[ParagraphSegment] = sorted(paragraph_segs.values(), key=lambda x: x.start_time)    
     paragraphs = [x for x in paragraphs if x.text != '']
     for x in paragraphs:
         x.text = x.text.rstrip()
