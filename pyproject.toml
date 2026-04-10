@@ -1,6 +1,6 @@
 [project]
 name = "ampav-core"
-version = "0.0.5"
+version = "0.0.6"
 description = "Core Libraries/Schemas/Utilties for the AMPAV environment"
 readme = "README.md"
 license = "Apache-2.0"
@@ -17,11 +17,10 @@ dependencies = [
     "pydantic",
     "pyyaml",
     "av",
-    "torch"
 ]
 
 [project.scripts]
-probe_media = "ampav.core.media:cli_probe_media"
+probe_media = "ampav.core.schema.av_metadata:cli_probe_media"
 
 
 [project.urls]

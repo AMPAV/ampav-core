@@ -13,8 +13,11 @@ class ListLoggingHandler(logging.Handler):
 
         :param log: List to append new logging messages to
         :type log: list
+        
         """
+        super().__init__()
         self.log = log
+
 
     def emit(self, record):
         self.log.append(self.format(record))
