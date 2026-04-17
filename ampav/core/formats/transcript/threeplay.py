@@ -4,6 +4,7 @@ from ...schema.segments import ParagraphSegment, WordSegment
 from itertools import pairwise
 import argparse
 import json
+from ...formats.transcript.webvtt import paragraphs_to_webvtt
 
 def import_threeplay_json(threeplay: dict) -> ToolOutput:
     """Take a threeplay data structure and convert it to
@@ -66,7 +67,13 @@ def import_threeplay_json(threeplay: dict) -> ToolOutput:
 def cli_import_threeplay_json():
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help="3Play JSON file")
+    parser.add_argument("--webvtt", action="store_true", help="Dump webvtt instead of yaml")
     args = parser.parse_args()
     with open(args.file) as f:
         data = json.load(f)
-        print(import_threeplay_json(data).model_dump_yaml())
+
+    xscript = import_threeplay_json(data)
+    if args.webvtt:
+        print(paragraphs_to_webvtt(xscript.output.paragraphs))
+    else:
+        print(xscript.model_dump_yaml())

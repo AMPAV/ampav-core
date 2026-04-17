@@ -10,6 +10,12 @@ class Segment(AmpAVBaseModel):
     end_time: float | None = Field(None, description="End time of the word")
     tool_specific: dict[str, Any] | None = Field(None, description="Additional data provided by the tool")
 
+    def duration(self):
+        if self.start_time is not None and self.end_time is not None:
+            return self.end_time  - self.start_time
+        else:
+            return 0
+
 
 class WordSegment(Segment):
     ampav_format: Literal['wordsegment'] = 'wordsegment'
@@ -33,7 +39,12 @@ class WordSegment(Segment):
             suffix = None
         return WordSegment(word=word, prefix=prefix, suffix=suffix, **kwargs)
 
-
+    def to_str(self) -> str:
+        """return the prefix + word + suffix"""
+        return (('' if self.prefix is None else self.prefix) + 
+                self.word +
+                ('' if self.suffix is None else self.suffix)).strip()
+    
 class ParagraphSegment(Segment):
     ampav_format: Literal['paragraph_segment'] = 'paragraph_segment'
     speaker: str | None = Field(None, description="Speaker of the paragraph")
@@ -41,7 +52,7 @@ class ParagraphSegment(Segment):
 
 
 
-Segment = Annotated[Union[Segment, WordSegment, ParagraphSegment], Field(discriminator='ampav_format')]
+SegmentType = Annotated[Union[Segment, WordSegment, ParagraphSegment], Field(discriminator='ampav_format')]
 
 
 class Segments(AmpAVBaseModel):
@@ -49,7 +60,7 @@ class Segments(AmpAVBaseModel):
     ampav_format_version: Literal[1] = 1
     tool: str
     tag: str
-    segments: list[Segment] = Field(default_factory=list,
+    segments: list[SegmentType] = Field(default_factory=list,
                                     description="Segments")
 
 

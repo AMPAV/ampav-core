@@ -4,6 +4,7 @@ General purpos utilities
 import yaml
 from pydantic import BaseModel
 
+
 def duration2hhmmss(duration: float) -> str:
     """
     Take a duration in seconds and convert it to hh:mm:ss.sss
@@ -45,3 +46,5 @@ def pretty_yaml(thing: object, **kwargs) -> str:
     if isinstance(thing, BaseModel):
         thing = thing.model_dump(exclude_none=True)
     return yaml.safe_dump(thing, **kwargs)
+
+
