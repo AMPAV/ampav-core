@@ -20,6 +20,8 @@ def import_text_transcript(text: str) -> ToolOutput:
     for word in text.split():
         xscript.output.words.append(WordSegment.from_str(word))
 
+    xscript.output.text = " ".join([x.to_str() for x in xscript.output.words])
+    
     xscript.output.paragraphs = words_to_paragraphs(xscript.output.words)
     return xscript
 
