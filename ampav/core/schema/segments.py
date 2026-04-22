@@ -4,13 +4,18 @@ from .basemodel import AmpAVBaseModel
 
 
 class Segment(AmpAVBaseModel):
-    ampav_format: Literal['timesegment'] = 'segment'
-    ampav_format_version: Literal[1] = 1
-    start_time: float | None= Field(None, description="Start time of the word")
-    end_time: float | None = Field(None, description="End time of the word")
+    """Base class for a time-based segment"""
+    start_time: float | None= Field(None, description="Start time of the segment")
+    end_time: float | None = Field(None, description="End time of the segment")
     tool_specific: dict[str, Any] | None = Field(None, description="Additional data provided by the tool")
 
-    def duration(self):
+    def duration(self) -> float:
+        """
+        Return the duration of the segment
+        
+        :return: duration of the segment
+        :rtype: float
+        """
         if self.start_time is not None and self.end_time is not None:
             return self.end_time  - self.start_time
         else:
@@ -18,7 +23,7 @@ class Segment(AmpAVBaseModel):
 
 
 class WordSegment(Segment):
-    ampav_format: Literal['wordsegment'] = 'wordsegment'
+    """Segment representing a word"""
     speaker: str | None = Field(None, description="Speaker of the word")
     prefix: str | None = Field(None, description="Word prefix data")
     word: str = Field(description="Word")
@@ -26,6 +31,14 @@ class WordSegment(Segment):
         
     @staticmethod
     def from_str(word: str, **kwargs) -> "WordSegment":
+        """
+        Remove prefix/suffix from a word and return a segment
+        :param word: the raw word
+        :type word: str
+        :param kwargs: segment-compatible kwargs
+        :return: a new word segment
+        :rtype: WordSegment
+        """
         ixes = (''' ,.?![](){}<>;:''')
         if word[0] in ixes:
             prefix = word[0]
@@ -45,23 +58,12 @@ class WordSegment(Segment):
                 self.word +
                 ('' if self.suffix is None else self.suffix)).strip()
     
+
 class ParagraphSegment(Segment):
-    ampav_format: Literal['paragraph_segment'] = 'paragraph_segment'
+    """Representation of a paragraph segment"""
     speaker: str | None = Field(None, description="Speaker of the paragraph")
     text: str | None = Field(None, description="Paragraph text")
 
-
-
-SegmentType = Annotated[Union[Segment, WordSegment, ParagraphSegment], Field(discriminator='ampav_format')]
-
-
-class Segments(AmpAVBaseModel):
-    ampav_format: Literal['segments'] = 'segments'
-    ampav_format_version: Literal[1] = 1
-    tool: str
-    tag: str
-    segments: list[SegmentType] = Field(default_factory=list,
-                                    description="Segments")
 
 
 

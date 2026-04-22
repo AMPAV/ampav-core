@@ -1,5 +1,6 @@
-from ...schema.segments import ParagraphSegment
-from ...utils import duration2hhmmss
+from ..schema.segments import ParagraphSegment
+from ..utils import duration2hhmmss
+
 
 def paragraphs_to_webvtt(paras: list[ParagraphSegment]) -> str:
     res = "WEBVTT\n\n"

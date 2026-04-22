@@ -2,14 +2,14 @@ import logging
 from pathlib import Path
 
 from ampav.core.logging import LOG_FORMAT
-from ...schema.tool import ToolOutput
-from ...schema.transcript import Transcript
-from ...schema.segments import ParagraphSegment, WordSegment
+from ..schema.tool import ToolOutput
+from ..schema.transcript import Transcript
+from ..schema.segments import ParagraphSegment, WordSegment
 from itertools import pairwise
 import argparse
 import json
-from ...formats.transcript.webvtt import paragraphs_to_webvtt
-from ...formats.transcript.utils import words_to_paragraphs
+from .webvtt import paragraphs_to_webvtt
+from ..schema.transcript import words_to_paragraphs
 
 def import_text_transcript(text: str) -> ToolOutput:
     """Take text and convert it to a transcript tool output"""
