@@ -1,10 +1,10 @@
-from ...schema.tool import ToolOutput
-from ...schema.transcript import Transcript
-from ...schema.segments import ParagraphSegment, WordSegment
+from ..schema.tool import ToolOutput
+from ..schema.transcript import Transcript
+from ..schema.segments import ParagraphSegment, WordSegment
 from itertools import pairwise
 import argparse
 import json
-from ...formats.transcript.webvtt import paragraphs_to_webvtt
+from .webvtt import paragraphs_to_webvtt
 
 def import_threeplay_json(threeplay: dict) -> ToolOutput:
     """Take a threeplay data structure and convert it to

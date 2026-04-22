@@ -8,6 +8,9 @@ import av.container
 import argparse
 
 class AudioStream(AmpAVBaseModel):
+    """
+    Properites of an AudioStream
+    """
     bit_rate: int = Field(0, description="Stream bit rate")
     channels: int = Field(0, description="Number of channels in the field")
     codec_name: str = Field('unknown', description='Codec name')
@@ -23,8 +26,12 @@ class AudioStream(AmpAVBaseModel):
 
 
 class VideoStream(AmpAVBaseModel):
+    """
+    properties of a VideoStream
+    """
     @staticmethod
     def fraction_factory(num=1, den=1):
+        """Create a list for a fraction's numerator and denominator"""
         return [num, den]
     
     bit_rate: int = Field(0, description="Stream bit rate")
@@ -49,10 +56,16 @@ class VideoStream(AmpAVBaseModel):
     
 
 class SubtitleStream(AmpAVBaseModel):
+    """
+    Properties of a SubtitleStream
+    """
     pass
 
 
 class Streams(AmpAVBaseModel):
+    """
+    The different streams that can appear in a media file
+    """
     audio: list[AudioStream] = Field(default_factory=list,
                                      description="Audio Streams")
     video: list[VideoStream] = Field(default_factory=list,
@@ -63,27 +76,26 @@ class Streams(AmpAVBaseModel):
 
 class AVMetadata(AmpAVBaseModel):
     """Technical metadata for a file"""
-    ampav_format: Literal['avmetadata'] = 'avmetadata'
-    ampav_format_version: Literal[1] = 1
+    ampav_format: Literal['avmetadata'] = 'avmetadata/1'
     bit_rate: int = Field(0, description="Overall media bitrate")
-    duration: float = Field(0, description="File duration, in microseconds")
+    duration: float = Field(0, description="File duration, in seconds")
     format_name: str = Field('Unknown', description="Format name")
     format_long_name: str = Field('Unknown', description="Format's long name")
     metadata: dict[str, Any] = Field(default_factory=dict, 
                                      description="User-defined container metadata")
     size: int = Field(0, description="File size")
-    start_time: int | None = Field(0, description="Media start time, in microseconds")
+    start_time: int | None = Field(0, description="Media start time, in seconds")
     streams: Streams = Field(default_factory=Streams,
                              description="Streams in the container file")
     
 
     @staticmethod
-    def _safe_getattr(o: object, k: str) -> Any:
+    def _safe_getattr(o: object, k: str, default: Any=None) -> Any:
         this, *rest = k.split('.')
         try:
             v = getattr(o, this)
         except Exception as e:
-            v = None            
+            v = default            
         if rest and v is not None:
             v = AVMetadata._safe_getattr(v, '.'.join(rest))
         return v
@@ -102,14 +114,26 @@ class AVMetadata(AmpAVBaseModel):
 
 
     @classmethod
-    def from_file(cls, file: Path):        
+    def from_file(cls, file: Path) -> "AVMetadata":
+        """
+        Create an AVMetadata structure by reading a file
+        
+        :param file: File to read
+        :type file: Path
+        """
         m = av.container.open(file)
         data = AVMetadata._getattrs(m,
                                     ['bit_rate', 'duration', 
                                      'format_name!format.name',
                                      'format_long_name!format.long_name', 
                                      'metadata', 'size', 'start_time'])
-        
+        if data['start_time']:
+            data['start_time'] /= 1_000_000
+
+        if data['duration']:
+            data['duration'] /= 1_000_000
+
+
         data['streams'] = {'audio': [], 'video': [], 'subtitle': []}
         for s in m.streams.audio:
             sdata = AVMetadata._getattrs(s, 
@@ -132,11 +156,13 @@ class AVMetadata(AmpAVBaseModel):
                                           'type', 'width'])
             sdata['duration'] *= float(getattr(s, 'time_base'))
             for k in ('display_aspect_ratio', 'frame_rate', 'sample_aspect_ratio'):
-                sdata[k] = [sdata[k].numerator, sdata[k].denominator]
+                if sdata[k] is not None:
+                    sdata[k] = [sdata[k].numerator, sdata[k].denominator]
+                else:
+                    sdata[k] = [1, 1]
             data['streams']['video'].append(sdata)
 
         return AVMetadata(**data)
-
 
 
 def cli_probe_media():
