@@ -56,7 +56,7 @@ class WordSegment(Segment):
         """return the prefix + word + suffix"""
         return (('' if self.prefix is None else self.prefix) + 
                 self.word +
-                ('' if self.suffix is None else self.suffix)).strip()
+                ('' if self.suffix is None else self.suffix))
     
 
 class ParagraphSegment(Segment):
