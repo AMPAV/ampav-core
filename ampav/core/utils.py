@@ -3,7 +3,7 @@ General purpos utilities
 """
 import yaml
 from pydantic import BaseModel
-
+from functools import reduce
 
 def duration2hhmmss(duration: float) -> str:
     """
@@ -48,3 +48,16 @@ def pretty_yaml(thing: object, **kwargs) -> str:
     return yaml.safe_dump(thing, **kwargs)
 
 
+
+
+def rsetattr(obj, attr: str, val):
+    """Set an object attribute handling dotted notation"""
+    pre, _, post = attr.rpartition('.')
+    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
+
+
+def rgetattr(obj, attr, *args):
+    """Get an object attribute handling dotted notation"""
+    def _getattr(obj, attr):
+        return getattr(obj, attr, *args)
+    return reduce(_getattr, [obj] + attr.split('.'))

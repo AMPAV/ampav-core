@@ -1,5 +1,5 @@
 from pydantic import Field
-from typing import Literal, Annotated, Union, Any
+from typing import Callable, Literal, Annotated, Union, Any
 from .basemodel import AmpAVBaseModel
 from .segments import WordSegment, ParagraphSegment
 import logging
@@ -28,6 +28,16 @@ class Transcript(AmpAVBaseModel):
         :type max_paragraph: float
         """
         self.paragraphs = words_to_paragraphs(self.words, paragraph_gap, max_paragraph)
+
+    def remove_overlapping_words(self, tiebreaker: Callable | None=None,
+                                 paragraph_gap: float = 1.5, 
+                                 max_paragraph: float=10, 
+                                 separator: str=''):
+        self.words = remove_overlapping_words(self.words, tiebreaker)
+        # at this point the paragraphs and the text is invalid, so let's fix
+        # that too
+        self.reformat_paragraphs(paragraph_gap, max_paragraph)
+        self.text = separator.join(x.to_str() for x in self.words)
 
 
 
@@ -90,3 +100,49 @@ def words_to_paragraphs(words: list[WordSegment],
         paragraphs.append(p)
 
     return paragraphs
+
+
+def remove_overlapping_words(words: list[WordSegment], tiebreaker: Callable=None) -> list[WordSegment]:
+    """Given a list of word segments where some of the words 
+       overlap, remove the overlapping ones.  Optionally, a tiebreaker function
+       can be used to break ties"""
+    if tiebreaker is None:
+        # do nothing
+        tiebreaker = lambda x: 1
+
+    def overlap(w1: WordSegment, w2: WordSegment):
+        return (w2.start_time <= w1.start_time <= w2.end_time) or (w2.start_time <= w1.end_time <= w2.end_time)
+            
+    new_words: list[WordSegment] = []
+    last_end = 0
+    while words:
+        w = words.pop(0)
+        if w.start_time >= last_end:
+            new_words.append(w)
+            last_end = w.end_time
+        else:
+            # we have to back up from new words.
+            #print(f"OVERLAP: {last_end}: {w}")            
+            backtrack = []
+            #while new_words and new_words[-1].end_time > w.start_time:
+            #    if overlap(w, new_words[-1]):
+            #        print(f"OVERLAPPING WORDS: {w}, {new_words[-1]}")
+            #    backtrack.append(new_words.pop())
+            while new_words and not overlap(w, new_words[-1]):
+                backtrack.append(new_words.pop())
+            #print("WORDS:\n", "\n".join([str(x) for x in new_words[:-20]]))
+            #print("BACKTRACK:\n", "\n".join([str(x) for x in backtrack]))
+            #print("LOOKAHEAD:\n", "\n".join([str(x) for x in words[0:len(backtrack)]]))
+            while backtrack and words:
+                bt = backtrack.pop()
+                la = words.pop(0)
+                if tiebreaker(bt) > tiebreaker(la):
+                    new_words.append(bt)
+                    last_end = bt.end_time
+                else:
+                    new_words.append(la)
+                    last_end = la.end_time
+            if backtrack:
+                new_words.extend(backtrack)
+
+    return new_words
