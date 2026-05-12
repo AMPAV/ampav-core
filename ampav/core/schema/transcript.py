@@ -9,11 +9,11 @@ class Transcript(AmpAVBaseModel):
     ampav_format: Literal['transcript/1'] = 'transcript/1'
     media_duration: float | None = Field(default=None, description="Duration of the media, if known")
     text: str = Field(default="", description="Raw text output of the transcription")
-            
     words: list[WordSegment] = Field(default_factory=list, 
                                   description="Timestamped words in the transcript")
     paragraphs: list[ParagraphSegment] = Field(default_factory=list,
                                                     description="Timestamped paragraphs")
+    languages: list[str] | None = Field(None, description="List of languages in the transcript")
 
 
     def reformat_paragraphs(self, paragraph_gap: float=1.5, 
@@ -29,6 +29,7 @@ class Transcript(AmpAVBaseModel):
         """
         self.paragraphs = words_to_paragraphs(self.words, paragraph_gap, max_paragraph)
 
+
     def remove_overlapping_words(self, tiebreaker: Callable | None=None,
                                  paragraph_gap: float = 1.5, 
                                  max_paragraph: float=10, 
@@ -38,7 +39,6 @@ class Transcript(AmpAVBaseModel):
         # that too
         self.reformat_paragraphs(paragraph_gap, max_paragraph)
         self.text = separator.join(x.to_str() for x in self.words)
-
 
 
 def words_to_paragraphs(words: list[WordSegment], 
@@ -121,18 +121,11 @@ def remove_overlapping_words(words: list[WordSegment], tiebreaker: Callable=None
             new_words.append(w)
             last_end = w.end_time
         else:
-            # we have to back up from new words.
-            #print(f"OVERLAP: {last_end}: {w}")            
+            # we have to back up from new words.     
             backtrack = []
-            #while new_words and new_words[-1].end_time > w.start_time:
-            #    if overlap(w, new_words[-1]):
-            #        print(f"OVERLAPPING WORDS: {w}, {new_words[-1]}")
-            #    backtrack.append(new_words.pop())
             while new_words and not overlap(w, new_words[-1]):
                 backtrack.append(new_words.pop())
-            #print("WORDS:\n", "\n".join([str(x) for x in new_words[:-20]]))
-            #print("BACKTRACK:\n", "\n".join([str(x) for x in backtrack]))
-            #print("LOOKAHEAD:\n", "\n".join([str(x) for x in words[0:len(backtrack)]]))
+
             while backtrack and words:
                 bt = backtrack.pop()
                 la = words.pop(0)

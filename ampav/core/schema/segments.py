@@ -25,10 +25,12 @@ class Segment(AmpAVBaseModel):
 class WordSegment(Segment):
     """Segment representing a word"""
     speaker: str | None = Field(None, description="Speaker of the word")
-    prefix: str | None = Field(None, description="Word prefix data")
-    word: str = Field(description="Word")
-    suffix: str | None = Field(None, description="Word suffix data")
-        
+    prefix: str | None = Field(None, description="Punctuation/whitespace word prefix from transcriber")
+    word: str = Field(description="Word text")
+    suffix: str | None = Field(None, description="Punctuation/whitespace word suffix from transcriber")
+    language: str | None = Field(None, description="Word language")
+    confidence: str | None = Field(None, description="Confidence score")
+    
     @staticmethod
     def from_str(word: str, **kwargs) -> "WordSegment":
         """
@@ -52,6 +54,7 @@ class WordSegment(Segment):
             suffix = None
         return WordSegment(word=word, prefix=prefix, suffix=suffix, **kwargs)
 
+
     def to_str(self) -> str:
         """return the prefix + word + suffix"""
         return (('' if self.prefix is None else self.prefix) + 
@@ -63,7 +66,7 @@ class ParagraphSegment(Segment):
     """Representation of a paragraph segment"""
     speaker: str | None = Field(None, description="Speaker of the paragraph")
     text: str | None = Field(None, description="Paragraph text")
-
+    language: str | None = Field(None, description="Language used in paragraph")
 
 
 
