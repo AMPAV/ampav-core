@@ -3,11 +3,12 @@ from typing import Literal, Annotated, Union, Any
 from .basemodel import AmpAVBaseModel
 from .av_metadata import AVMetadata
 from .transcript import Transcript
+from .compound import CompoundOutput
 from ..logging import ListLoggingHandler, LOG_FORMAT
 import logging
 from logging import LogRecord
 
-OutputTypes = Annotated[Union[AVMetadata, Transcript], Field(discriminator='ampav_format')]
+OutputTypes = Annotated[Union[AVMetadata, Transcript, CompoundOutput], Field(discriminator='ampav_format')]
 
 
 class ToolOutput(AmpAVBaseModel):
