@@ -7,7 +7,7 @@ class Segment(AmpAVBaseModel):
     """Base class for a time-based segment"""
     start_time: float | None= Field(None, description="Start time of the segment")
     end_time: float | None = Field(None, description="End time of the segment")
-    tool_specific: dict[str, Any] | None = Field(None, description="Additional data provided by the tool")
+    tool_private: dict[str, Any] | None = Field(None, description="Private data provided by the tool")
 
     def duration(self) -> float:
         """
@@ -29,7 +29,7 @@ class WordSegment(Segment):
     word: str = Field(description="Word text")
     suffix: str | None = Field(None, description="Punctuation/whitespace word suffix from transcriber")
     language: str | None = Field(None, description="Word language")
-    confidence: str | None = Field(None, description="Confidence score")
+    confidence: float | None = Field(None, description="Confidence score, a value between 0 and 1, inclusive")
     
     @staticmethod
     def from_str(word: str, **kwargs) -> "WordSegment":
@@ -41,7 +41,7 @@ class WordSegment(Segment):
         :return: a new word segment
         :rtype: WordSegment
         """
-        ixes = (''' ,.?![](){}<>;:''')
+        ixes = (''' ,.?![]()'"{}<>;:''')
         if word[0] in ixes:
             prefix = word[0]
             word = word[1:]
