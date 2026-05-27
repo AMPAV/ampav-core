@@ -1,6 +1,9 @@
 """
 General purpos utilities
 """
+from enum import StrEnum, auto
+from typing import Any
+
 import yaml
 from pydantic import BaseModel
 from functools import reduce
@@ -59,3 +62,56 @@ def rgetattr(obj, attr, *args):
     def _getattr(obj, attr):
         return getattr(obj, attr, *args)
     return reduce(_getattr, [obj] + attr.split('.'))
+
+
+class AsyncTool:
+    def __init__(self, *args, **kwargs):
+        ...
+
+
+    def submit(self, *args, **kwargs) -> Any:
+        """Submit a new job, returning the job's id"""
+        ...
+
+
+    # If someone refers to a job_id that doesn't exist, throw a KeyError
+
+    class StatusCode(StrEnum):
+        IN_PROGRESS = auto()
+        FINISHED = auto()
+        ERROR = auto()
+
+
+    class JobStatus():
+        job_id: Any
+        status: "AsyncTool.StatusCode"
+        progress: float
+
+
+    def get_status(self, job_id: Any) -> "AsyncTool.JobStatus":
+        "Return the status of a job"
+        ...
+
+
+    def is_done(self, job_id: Any) -> bool:
+        """Return True if the job is done"""
+        return self.get_status(job_id)[1] >= 100
+            
+
+    def get_result(self, job_id: Any, wait: bool=True, polling_interval: float=30) -> Any | None:
+        """If wait is True (the default), wait until the job has finished and return the results
+           If wait is not True, return the results if they are ready otherwise None
+           Polling_interval is used when waiting for results"""
+        ...
+
+
+    def delete(self, job_id: Any):
+        """Delete a job, killing it if it is still in progress.
+           Also remove any resources allocated"""
+        ...
+
+
+    def list_jobs(self) -> list[Any]:
+        """Get the jobs that are in the system"""
+        ...
+
