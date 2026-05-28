@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import StrEnum, auto
 import time
 from typing import Any
+from pydantic import BaseModel
 
 from ampav.core.schema.tool import ToolOutput
 
@@ -19,8 +20,7 @@ class AsyncStatusCode(StrEnum):
     ERROR = auto()
 
 
-@dataclass
-class AsyncJobStatus:
+class AsyncJobStatus(BaseModel):
     job_id: Any
     status: AsyncStatusCode
     progress: float
