@@ -70,7 +70,7 @@ class AsyncTool(Generic[InputT, JobRefT, ExternalResultT]):
     timeout: float | None = None
     cleanup_policy: CleanupPolicy = CleanupPolicy()
 
-    def submit(self, provider_input: InputT, *args: Any, **kwargs: Any) -> JobRefT:
+    def submit(self, provider_input: InputT, **kwargs: Any) -> JobRefT:
         """Submit provider-native input and return a provider-native job reference.
 
         For cloud tools, `provider_input` is commonly an external URI or a
@@ -111,7 +111,6 @@ class AsyncTool(Generic[InputT, JobRefT, ExternalResultT]):
     def process(
         self,
         provider_input: InputT,
-        *args: Any,
         **kwargs: Any,
     ) -> ToolOutput:
         """Submit provider-native input, wait for completion, clean up, and return AMPAV output.
@@ -119,7 +118,7 @@ class AsyncTool(Generic[InputT, JobRefT, ExternalResultT]):
         For AMPAV pipeline input, use `process_ampav_input()` so subclasses can
         extract and adapt the relevant `ToolOutput.output` data first.
         """
-        job = self.submit(provider_input, *args, **kwargs)
+        job = self.submit(provider_input, **kwargs)
         started = time.monotonic()
         status = self.get_status(job)
 
@@ -147,7 +146,6 @@ class AsyncTool(Generic[InputT, JobRefT, ExternalResultT]):
     def process_ampav_input(
         self,
         ampav_input: ToolOutput,
-        *args: Any,
         **kwargs: Any,
     ) -> ToolOutput:
         """Optionally process upstream AMPAV ToolOutput.
