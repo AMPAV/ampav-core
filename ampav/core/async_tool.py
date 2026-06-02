@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from ampav.core.schema.tool import ToolOutput
 
+InputT = TypeVar("InputT")
 JobRefT = TypeVar("JobRefT")
 ExternalResultT = TypeVar("ExternalResultT")
 
@@ -62,15 +63,19 @@ class CleanupPolicy(BaseModel):
     delete_output: bool = False
 
 
-class AsyncTool(Generic[JobRefT, ExternalResultT]):
+class AsyncTool(Generic[InputT, JobRefT, ExternalResultT]):
     """Base class for AMPAV tools that run as remote asynchronous jobs."""
 
     polling_interval: float = 30
     timeout: float | None = None
     cleanup_policy: CleanupPolicy = CleanupPolicy()
 
-    def submit(self, *args: Any, **kwargs: Any) -> JobRefT:
-        """Submit a new job and return a provider-native job reference."""
+    def submit(self, provider_input: InputT, *args: Any, **kwargs: Any) -> JobRefT:
+        """Submit provider-native input and return a provider-native job reference.
+
+        For cloud tools, `provider_input` is commonly an external URI or a
+        provider-specific request object.
+        """
         raise NotImplementedError
 
     def get_status(self, job: JobRefT) -> AsyncJobStatus:
@@ -105,11 +110,16 @@ class AsyncTool(Generic[JobRefT, ExternalResultT]):
 
     def process(
         self,
+        provider_input: InputT,
         *args: Any,
         **kwargs: Any,
     ) -> ToolOutput:
-        """Submit provider-native input, wait for completion, clean up, and return AMPAV output."""
-        job = self.submit(*args, **kwargs)
+        """Submit provider-native input, wait for completion, clean up, and return AMPAV output.
+
+        For AMPAV pipeline input, use `process_ampav_input()` so subclasses can
+        extract and adapt the relevant `ToolOutput.output` data first.
+        """
+        job = self.submit(provider_input, *args, **kwargs)
         started = time.monotonic()
         status = self.get_status(job)
 
@@ -140,5 +150,5 @@ class AsyncTool(Generic[JobRefT, ExternalResultT]):
         *args: Any,
         **kwargs: Any,
     ) -> ToolOutput:
-        """Process an upstream AMPAV ToolOutput through this tool."""
-        return self.process(ampav_input, *args, **kwargs)
+        """Adapt upstream AMPAV ToolOutput data and process it through this tool."""
+        raise NotImplementedError
