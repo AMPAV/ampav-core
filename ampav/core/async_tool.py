@@ -150,5 +150,7 @@ class AsyncTool(Generic[InputT, JobRefT, ExternalResultT]):
         *args: Any,
         **kwargs: Any,
     ) -> ToolOutput:
-        """Adapt upstream AMPAV ToolOutput data and process it through this tool."""
+        """Optionally process upstream AMPAV ToolOutput.
+        Tools that do not consume upstream AMPAV outputs may leave this unimplemented.
+        """
         raise NotImplementedError
