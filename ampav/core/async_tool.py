@@ -2,11 +2,14 @@
 
 import time
 from enum import StrEnum, auto
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
 from ampav.core.schema.tool import ToolOutput
+
+JobRefT = TypeVar("JobRefT")
+ExternalResultT = TypeVar("ExternalResultT")
 
 
 class AsyncStatusCode(StrEnum):
@@ -17,6 +20,11 @@ class AsyncStatusCode(StrEnum):
     SUCCEEDED = auto()
     FAILED = auto()
     CANCELED = auto()
+    PARTIAL_SUCCESS = auto()
+
+
+class ToolError(RuntimeError):
+    """Base exception for tool-level execution failures."""
 
 
 class AsyncJobStatus(BaseModel):
@@ -34,7 +42,12 @@ class AsyncJobStatus(BaseModel):
     @property
     def is_done(self) -> bool:
         """Return true when the remote job no longer needs polling."""
-        return self.status in {AsyncStatusCode.SUCCEEDED, AsyncStatusCode.FAILED, AsyncStatusCode.CANCELED}
+        return self.status in {
+            AsyncStatusCode.SUCCEEDED,
+            AsyncStatusCode.FAILED,
+            AsyncStatusCode.CANCELED,
+            AsyncStatusCode.PARTIAL_SUCCESS,
+        }
 
 
 class CleanupPolicy(BaseModel):
@@ -49,41 +62,45 @@ class CleanupPolicy(BaseModel):
     delete_output: bool = False
 
 
-class AsyncTool:
+class AsyncTool(Generic[JobRefT, ExternalResultT]):
     """Base class for AMPAV tools that run as remote asynchronous jobs."""
 
     polling_interval: float = 30
     timeout: float | None = None
     cleanup_policy: CleanupPolicy = CleanupPolicy()
 
-    def submit(self, *args: Any, **kwargs: Any) -> str:
-        """Submit a new job and return the provider job ID."""
+    def submit(self, *args: Any, **kwargs: Any) -> JobRefT:
+        """Submit a new job and return a provider-native job reference."""
         raise NotImplementedError
 
-    def get_status(self, job_id: str) -> AsyncJobStatus:
+    def get_status(self, job: JobRefT) -> AsyncJobStatus:
         """Return lightweight progress/status information for a job."""
         raise NotImplementedError
 
-    def get_job(self, job_id: str) -> Any:
+    def get_job(self, job: JobRefT) -> Any:
         """Return provider-specific full job details."""
         raise NotImplementedError
 
-    def is_done(self, job_id: str) -> bool:
+    def is_done(self, job: JobRefT) -> bool:
         """Return true when the job has reached a terminal state."""
-        return self.get_status(job_id).is_done
+        return self.get_status(job).is_done
 
-    def get_result(self, job_id: str) -> ToolOutput | None:
-        """Return the result if it is ready, otherwise return None."""
+    def get_external_result(self, job: JobRefT) -> ExternalResultT | None:
+        """Return the provider-native result if it is ready, otherwise return None."""
         raise NotImplementedError
 
-    def cleanup(self, job_id: str, cleanup_policy: CleanupPolicy | None = None) -> None:
+    def to_tool_output(self, job: JobRefT, result: ExternalResultT) -> ToolOutput:
+        """Convert a provider-native result into an AMPAV ToolOutput."""
+        raise NotImplementedError
+
+    def cleanup(self, job: JobRefT, cleanup_policy: CleanupPolicy | None = None) -> None:
         """Clean up resources selected by the cleanup policy.
         Implementations may not be able to delete in-progress provider jobs.
         """
         raise NotImplementedError
 
-    def list_jobs(self) -> list[str]:
-        """Return job IDs visible to this tool/provider."""
+    def list_jobs(self) -> Any:
+        """Return provider-native job listing data."""
         raise NotImplementedError
 
     def run(
@@ -92,24 +109,27 @@ class AsyncTool:
         **kwargs: Any,
     ) -> ToolOutput:
         """Submit a job, wait for completion, optionally clean up, and return its result."""
-        job_id = self.submit(*args, **kwargs)
+        job = self.submit(*args, **kwargs)
         started = time.monotonic()
-        status = self.get_status(job_id)
+        status = self.get_status(job)
 
         while not status.is_done:
             if self.timeout is not None and time.monotonic() - started > self.timeout:
-                self.cleanup(job_id, self.cleanup_policy)
-                raise TimeoutError(f"Async job {job_id!r} did not finish within {self.timeout} seconds")
+                self.cleanup(job, self.cleanup_policy)
+                raise ToolError(f"Async job {status.job_id!r} did not finish within {self.timeout} seconds")
             time.sleep(self.polling_interval)
-            status = self.get_status(job_id)
+            status = self.get_status(job)
 
         if status.status != AsyncStatusCode.SUCCEEDED:
-            self.cleanup(job_id, self.cleanup_policy)
+            self.cleanup(job, self.cleanup_policy)
             message = status.message or "no provider message"
-            raise RuntimeError(f"Async job {job_id!r} ended with status {status.status}: {message}")
+            raise ToolError(f"Async job {status.job_id!r} ended with status {status.status}: {message}")
 
-        result = self.get_result(job_id)
-        self.cleanup(job_id, self.cleanup_policy)
-        if result is None:
-            raise RuntimeError(f"Async job {job_id!r} succeeded without an available result")
-        return result
+        external_result = self.get_external_result(job)
+        if external_result is None:
+            self.cleanup(job, self.cleanup_policy)
+            raise ToolError(f"Async job {status.job_id!r} succeeded without an available result")
+
+        output = self.to_tool_output(job, external_result)
+        self.cleanup(job, self.cleanup_policy)
+        return output
