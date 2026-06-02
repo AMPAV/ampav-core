@@ -103,12 +103,12 @@ class AsyncTool(Generic[JobRefT, ExternalResultT]):
         """Return provider-native job listing data."""
         raise NotImplementedError
 
-    def run(
+    def process(
         self,
         *args: Any,
         **kwargs: Any,
     ) -> ToolOutput:
-        """Submit a job, wait for completion, optionally clean up, and return its result."""
+        """Submit provider-native input, wait for completion, clean up, and return AMPAV output."""
         job = self.submit(*args, **kwargs)
         started = time.monotonic()
         status = self.get_status(job)
@@ -133,3 +133,12 @@ class AsyncTool(Generic[JobRefT, ExternalResultT]):
         output = self.to_tool_output(job, external_result)
         self.cleanup(job, self.cleanup_policy)
         return output
+
+    def process_ampav_input(
+        self,
+        ampav_input: ToolOutput,
+        *args: Any,
+        **kwargs: Any,
+    ) -> ToolOutput:
+        """Process an upstream AMPAV ToolOutput through this tool."""
+        return self.process(ampav_input, *args, **kwargs)
