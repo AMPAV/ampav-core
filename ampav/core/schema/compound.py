@@ -3,10 +3,11 @@ from typing import Callable, Literal, Annotated, Union, Any
 from .basemodel import AmpAVBaseModel
 from .av_metadata import AVMetadata
 from .transcript import Transcript
+from .named_entity import NamedEntities
 from .raw import RawData, RawBinary
 
 OutputTypes = Annotated[Union[AVMetadata, Transcript, 
-                              RawData, RawBinary], Field(discriminator='ampav_format')]
+                              NamedEntities, RawData, RawBinary], Field(discriminator='ampav_format')]
 
 class CompoundOutput(AmpAVBaseModel):
     """This is for tools which output multiple data types"""
