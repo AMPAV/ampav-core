@@ -4,12 +4,13 @@ from .basemodel import AmpAVBaseModel
 from .av_metadata import AVMetadata
 from .transcript import Transcript
 from .named_entity import NamedEntities
+from .key_phrase import KeyPhrases
 from .compound import CompoundOutput
 from ..logging import ListLoggingHandler, LOG_FORMAT
 import logging
 from logging import LogRecord
 
-OutputTypes = Annotated[Union[AVMetadata, Transcript, NamedEntities, CompoundOutput], Field(discriminator='ampav_format')]
+OutputTypes = Annotated[Union[AVMetadata, Transcript, NamedEntities, KeyPhrases, CompoundOutput], Field(discriminator='ampav_format')]
 
 
 class ToolOutput(AmpAVBaseModel):
@@ -97,4 +98,3 @@ class ToolOutput(AmpAVBaseModel):
 
 
     
-
