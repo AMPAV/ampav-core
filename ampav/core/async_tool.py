@@ -28,12 +28,13 @@ class AsyncJobStatus(BaseModel):
     """Serializable base status for a remote async job.
 
     Providers may return subclasses with additional provider-specific fields.
-    `progress` is a percentage in the range 0-100 when the provider exposes it.
+    `progress` is a percentage in the range 0-100. Providers that do not expose
+    progress should leave it at 0 until the job reaches a terminal status.
     """
 
     job_id: str
     status: AsyncStatusCode
-    progress: float | None = Field(default=None, ge=0, le=100)
+    progress: float = Field(default=0, ge=0, le=100)
     message: str | None = None
 
     @property
@@ -47,45 +48,49 @@ class AsyncJobStatus(BaseModel):
         }
 
 
-class CleanupPolicy(BaseModel):
-    """Common cleanup choices for async remote jobs.
-
-    Passing ``None`` as the cleanup policy means the provider should apply its
-    default cleanup behavior, usually deleting temporary resources created by
-    the tool while leaving caller-provided inputs alone.
-    """
-
-    delete_job: bool = False
-    delete_input: bool = False
-    delete_output: bool = False
-
-
 class AsyncTool:
     """Base class for AMPAV tools that run as remote asynchronous jobs."""
 
     polling_interval: float = 30
     timeout: float | None = None
-    cleanup_policy: CleanupPolicy | None = None
+    cleanup: bool = True
 
     def submit(self, *args: Any, **kwargs: Any) -> Any:
-        """Submit a remote async job and return the provider job handle."""
+        """Submit a remote async job and return the provider job handle.
+
+        Providers may return any handle type they can pass back to the other
+        lifecycle methods. Prefer serializable handles when practical.
+        """
         raise NotImplementedError
 
-    def get_status(self, job: Any) -> AsyncJobStatus:
-        """Return lightweight progress/status information for a job."""
+    def get_status(self, job: Any, *, details: bool = False) -> AsyncJobStatus:
+        """Return progress/status information for a job.
+
+        Keep the default call lightweight. Providers may include heavier
+        provider-specific details when ``details`` is true.
+        """
         raise NotImplementedError
 
     def is_done(self, job: Any) -> bool:
-        """Return true when the job has reached a terminal state."""
-        return self.get_status(job).is_done
+        """Return true when the job has reached a terminal state.
+
+        Providers may override this when they have a cheaper completion check.
+        """
+        return self.get_status(job, details=False).is_done
+
+    def cancel(self, job: Any) -> None:
+        """Cancel a remote async job and clean up provider resources if possible."""
+        raise NotImplementedError
 
     def get_result(self, job: Any) -> ToolOutput | None:
         """Return AMPAV output when ready, otherwise return None.
 
         Implementations provide provider-native retrieval and conversion through
-        the internal hooks. Terminal failed/canceled jobs raise ``ToolError``.
+        the internal hooks. Terminal failed/canceled/partial-success jobs raise
+        ``ToolError`` and clean up resources created by the tool when cleanup is
+        enabled.
         """
-        status = self.get_status(job)
+        status = self.get_status(job, details=False)
         if not status.is_done:
             return None
 
@@ -100,7 +105,8 @@ class AsyncTool:
 
             return self._to_tool_output(job, external_result)
         finally:
-            self._cleanup(job, self.cleanup_policy)
+            if self.cleanup:
+                self._cleanup(job)
 
     def process(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Submit a job, wait for completion, clean up, and return AMPAV output."""
@@ -109,14 +115,15 @@ class AsyncTool:
 
         while not self.is_done(job):
             if self.timeout is not None and time.monotonic() - started > self.timeout:
-                self._cleanup(job, self.cleanup_policy)
-                status = self.get_status(job)
-                raise ToolError(f"Async job {status.job_id!r} did not finish within {self.timeout} seconds")
+                status = self.get_status(job, details=False)
+                if self.cleanup:
+                    self._cleanup(job)
+                raise TimeoutError(f"Async job {status.job_id!r} did not finish within {self.timeout} seconds")
             time.sleep(self.polling_interval)
 
         result = self.get_result(job)
         if result is None:
-            status = self.get_status(job)
+            status = self.get_status(job, details=False)
             raise ToolError(f"Async job {status.job_id!r} finished without an available result")
         return result
 
@@ -128,6 +135,6 @@ class AsyncTool:
         """Convert a provider-native result into an AMPAV ToolOutput."""
         raise NotImplementedError
 
-    def _cleanup(self, job: Any, cleanup_policy: CleanupPolicy | None = None) -> None:
-        """Clean up resources selected by the cleanup policy."""
+    def _cleanup(self, job: Any) -> None:
+        """Clean up temporary resources created by this tool."""
         return None
