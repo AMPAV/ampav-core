@@ -123,6 +123,8 @@ class AsyncTool:
 
         result = self.get_result(job)
         if result is None:
+            # get_result() owns terminal cleanup. Reaching this branch means
+            # is_done() and get_result() disagreed, so avoid double cleanup.
             status = self.get_status(job, details=False)
             raise ToolError(f"Async job {status.job_id!r} finished without an available result")
         return result
