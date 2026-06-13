@@ -63,6 +63,14 @@ class AsyncTool:
         """
         raise NotImplementedError
 
+    def cancel(self, job: Any) -> None:
+        """Cancel a remote async job and clean up provider resources if possible."""
+        raise NotImplementedError
+
+    def list_jobs(self) -> Any:
+        """Return provider-native job listing data for recovery/inspection."""
+        raise NotImplementedError
+
     def get_status(self, job: Any, *, details: bool = False) -> AsyncJobStatus:
         """Return progress/status information for a job.
 
@@ -77,10 +85,6 @@ class AsyncTool:
         Providers may override this when they have a cheaper completion check.
         """
         return self.get_status(job, details=False).is_done
-
-    def cancel(self, job: Any) -> None:
-        """Cancel a remote async job and clean up provider resources if possible."""
-        raise NotImplementedError
 
     def get_result(self, job: Any) -> ToolOutput | None:
         """Return AMPAV output when ready, otherwise return None.
