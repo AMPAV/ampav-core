@@ -103,7 +103,7 @@ class AsyncTool:
             native_result = self._get_native_result_hook(job_handle)
             if native_result is None:
                 raise ToolError(f"Async job {status.job_handle!r} succeeded without an available result")
-            tool_output = AsyncTool.native_to_tool_output(native_result)
+            tool_output = self.__class__.native_to_tool_output(native_result)
             # Add any additional context to the tool
             self._finalize_tool_output_hook(job_handle, tool_output)
             return tool_output
@@ -149,4 +149,4 @@ class AsyncTool:
 
     def cleanup(self, job_handle: Any) -> None:
         """Clean up temporary resources created by this tool."""
-        return NotImplementedError
+        raise NotImplementedError
