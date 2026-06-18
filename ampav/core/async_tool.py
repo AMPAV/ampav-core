@@ -9,6 +9,7 @@ from ampav.core.schema.tool import ToolOutput
 
 class AsyncStatusCode(StrEnum):
     """Common async job states across remote tool providers."""
+    QUEUED = auto()
     IN_PROGRESS = auto()
     SUCCEEDED = auto()
     FAILED = auto()
