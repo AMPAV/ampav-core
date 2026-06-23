@@ -62,7 +62,7 @@ class AsyncTool:
 
     def submit(self, *args: Any, **kwargs: Any) -> str:
         """Submit a async job and return a job handle string."""
-        raise NotImplementedError
+        raise NotImplementedError("submit must be implemented by the tool")
 
 
     def cancel(self, job_handle: str) -> None:
@@ -70,12 +70,12 @@ class AsyncTool:
         
         If the job_handle doesn't exist, a KeyError will be raised
         """
-        raise NotImplementedError
+        raise NotImplementedError("cancel must be implemented by the tool")
 
 
     def list_jobs(self) -> list[str]:
         """Return a list of job handles known by the implementation"""
-        raise NotImplementedError
+        raise NotImplementedError("list_jobs must be implemented by the tool")
 
 
     def get_status(self, job_handle: str, details: bool = True) -> AsyncJobStatus:
@@ -86,7 +86,7 @@ class AsyncTool:
 
         If the job doesn't exist, a KeyError will be raised
         """
-        raise NotImplementedError
+        raise NotImplementedError("get_status must be implemented by the tool")
 
 
     def is_done(self, job_handle: str) -> bool:
@@ -107,7 +107,7 @@ class AsyncTool:
 
         Failed jobs will raise a ToolError with relevant details.
         """
-        raise NotImplementedError
+        raise NotImplementedError("get_result must be implemented by the tool")
 
 
     def process(self, *args: Any, **kwargs: Any) -> ToolOutput:
@@ -129,11 +129,11 @@ class AsyncTool:
     def native_to_tool_output(native: Any) -> ToolOutput:
         """Convert a native result data structure (such as raw AWS Transcribe
         data) into an AMPAV ToolOutput."""
-        raise NotImplementedError
+        raise NotImplementedError("native_to_tool_output must be implemented by the tool")
 
 
     def cleanup(self, job_handle: Any) -> None:
         """Clean up temporary resources created by this tool.
         
         If the job_handle doesn't exist, do nothing"""
-        raise NotImplementedError
+        raise NotImplementedError("cleanup must be implemented by the tool")
