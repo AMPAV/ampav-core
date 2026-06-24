@@ -65,14 +65,6 @@ class AsyncTool:
         raise NotImplementedError("submit must be implemented by the tool")
 
 
-    def cancel(self, job_handle: str) -> None:
-        """Cancel an async job and clean up resources.  
-        
-        If the job_handle doesn't exist, a KeyError will be raised
-        """
-        raise NotImplementedError("cancel must be implemented by the tool")
-
-
     def list_jobs(self) -> list[str]:
         """Return a list of job handles known by the implementation"""
         raise NotImplementedError("list_jobs must be implemented by the tool")
@@ -111,7 +103,7 @@ class AsyncTool:
 
 
     def process(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        """Submit a job, wait for completion, clean up, and return AMPAV output."""
+        """Submit a job, wait for completion, clean up, and return AMPAV tool output."""
         job_handle = self.submit(*args, **kwargs)
         while not self.is_done(job_handle):
             time.sleep(self.polling_interval)
@@ -124,7 +116,6 @@ class AsyncTool:
         return result
 
 
-
     @staticmethod
     def native_to_tool_output(native: Any) -> ToolOutput:
         """Convert a native result data structure (such as raw AWS Transcribe
@@ -135,5 +126,12 @@ class AsyncTool:
     def cleanup(self, job_handle: Any) -> None:
         """Clean up temporary resources created by this tool.
         
-        If the job_handle doesn't exist, do nothing"""
+        * If the job_handle doesn't exist, do nothing
+        * If the job is queued, dequeue it and clean up
+        * If the job is running, stop the job and clean up
+        * If the job has finished, clean up resources.
+
+        """
         raise NotImplementedError("cleanup must be implemented by the tool")
+
+    
