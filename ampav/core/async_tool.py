@@ -27,7 +27,7 @@ class ToolError(RuntimeError):
 
 
 class AsyncJobStatus(BaseModel):
-    """Serializable base status for an async job.
+    """Status of an async job.
     
     Implementors may return a subclass with additional information which would
     be populated when get_status(..., details=True).
@@ -123,8 +123,8 @@ class AsyncTool:
         raise NotImplementedError("native_to_tool_output must be implemented by the tool")
 
 
-    def cleanup(self, job_handle: Any) -> None:
-        """Clean up temporary resources created by this tool.
+    def cleanup(self, job_handle: str) -> None:
+        """Clean up temporary resources created by this job.
         
         * If the job_handle doesn't exist, do nothing
         * If the job is queued, dequeue it and clean up
