@@ -34,8 +34,8 @@ class AsyncJobStatus(BaseModel):
     """
     model_config = ConfigDict(use_enum_values=True) # make sure the status is rendered
 
-    job_handle: str
-    """An opaque handle that is used to refer to the job"""
+    job_id: str
+    """An opaque job_id that is used to refer to the job"""
 
     status: AsyncStatusCode
     """The current job status"""
@@ -61,16 +61,16 @@ class AsyncTool:
     polling_interval: float = 30
 
     def submit(self, *args: Any, **kwargs: Any) -> str:
-        """Submit a async job and return a job handle string."""
+        """Submit a async job and return a job id string."""
         raise NotImplementedError("submit must be implemented by the tool")
 
 
     def list_jobs(self) -> list[str]:
-        """Return a list of job handles known by the implementation"""
+        """Return a list of job ids known by the implementation"""
         raise NotImplementedError("list_jobs must be implemented by the tool")
 
 
-    def get_status(self, job_handle: str, details: bool = True) -> AsyncJobStatus:
+    def get_status(self, job_id: str, details: bool = True) -> AsyncJobStatus:
         """Return progress/status information for a job.
 
         Implementors may include additional provider-specific details when 
@@ -81,15 +81,15 @@ class AsyncTool:
         raise NotImplementedError("get_status must be implemented by the tool")
 
 
-    def is_done(self, job_handle: str) -> bool:
+    def is_done(self, job_id: str) -> bool:
         """Return true when the job has reached a terminal state.
         
         If the job doesn't exist, a KeyError will be raised
         """
-        return self.get_status(job_handle, details=False).is_done
+        return self.get_status(job_id, details=False).is_done
 
 
-    def get_result(self, job_handle: str) -> ToolOutput | None:
+    def get_result(self, job_id: str) -> ToolOutput | None:
         """Return AMPAV tool output when ready, otherwise return None.
 
         When the result is has been successfully retrieved the job will be
@@ -104,15 +104,15 @@ class AsyncTool:
 
     def process(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Submit a job, wait for completion, clean up, and return AMPAV tool output."""
-        job_handle = self.submit(*args, **kwargs)
-        while not self.is_done(job_handle):
+        job_id = self.submit(*args, **kwargs)
+        while not self.is_done(job_id):
             time.sleep(self.polling_interval)
 
-        result = self.get_result(job_handle)
+        result = self.get_result(job_id)
         if result is None:
             # get_result() owns terminal cleanup. Reaching this branch means
             # is_done() and get_result() disagreed, so avoid double cleanup.
-            raise ToolError(f"Async job {job_handle!r} finished without an available result")
+            raise ToolError(f"Async job {job_id} finished without an available result")
         return result
 
 
@@ -123,10 +123,10 @@ class AsyncTool:
         raise NotImplementedError("native_to_tool_output must be implemented by the tool")
 
 
-    def cleanup(self, job_handle: str) -> None:
+    def cleanup(self, job_id: str) -> None:
         """Clean up temporary resources created by this job.
         
-        * If the job_handle doesn't exist, do nothing
+        * If the job_id doesn't exist, do nothing
         * If the job is queued, dequeue it and clean up
         * If the job is running, stop the job and clean up
         * If the job has finished, clean up resources.
