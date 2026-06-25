@@ -59,14 +59,20 @@ class AsyncTool:
     """Base class for asynchronous AMPAV tools."""
 
     polling_interval: float = 30
+    """Default Polling interval to check if finished.  May be ignored by
+       implementations that use other methods to check if a job has completed"""
 
     def submit(self, *args: Any, **kwargs: Any) -> str:
         """Submit a async job and return a job id string."""
         raise NotImplementedError("submit must be implemented by the tool")
 
 
-    def list_jobs(self) -> list[str]:
-        """Return a list of job ids known by the implementation"""
+    def list_jobs(self) -> list[AsyncJobStatus]:
+        """Return a list of job ids known by the implementation
+        
+        Note: The implementation should restrict the returned jobs to ones that the
+        library tool has created, but this is not guaranteed.
+        """
         raise NotImplementedError("list_jobs must be implemented by the tool")
 
 
@@ -77,6 +83,8 @@ class AsyncTool:
         `details` is true.
 
         If the job doesn't exist, a KeyError will be raised
+
+        Note:  The default value of `details` may vary from tool to tool.
         """
         raise NotImplementedError("get_status must be implemented by the tool")
 
@@ -103,7 +111,15 @@ class AsyncTool:
 
 
     def process(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        """Submit a job, wait for completion, clean up, and return AMPAV tool output."""
+        """Run the tool and wait for the output.
+        
+        Generally the implementation will:
+        * Submit a job
+        * wait for completion
+        * clean up
+        * return AMPAV tool output.
+        
+        """
         job_id = self.submit(*args, **kwargs)
         while not self.is_done(job_id):
             time.sleep(self.polling_interval)
@@ -131,6 +147,8 @@ class AsyncTool:
         * If the job is running, stop the job and clean up
         * If the job has finished, clean up resources.
 
+        This call is blocking and will wait until finished.  If a native job
+        appears to be hung this method may raise an exception.
         """
         raise NotImplementedError("cleanup must be implemented by the tool")
 

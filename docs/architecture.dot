@@ -1,0 +1,66 @@
+digraph {
+    node [ shape=box; ];
+    graph [ rankdir="LR"];
+
+    subgraph cluster_aws {
+        label = "AWS";
+        cloud_aws_transcribe [label="Transcribe Service"];
+        cloud_aws_comprehend [label="Comprehend Service"];
+    }
+
+    subgraph cluster_azure {
+        label = "Azure";
+        cloud_azure_videoindexer [label="VideoIndexer Service"];
+    }
+
+    subgraph cluster_ampav {
+        label = "AMPAV";
+        aws_transcribe [label="ampav.aws.transcribe"];
+        aws_transcribe -> cloud_aws_transcribe [color="red"];
+        aws_comprehend [label="ampav.aws.comprehend"];
+        aws_comprehend -> cloud_aws_comprehend [color="red"];
+        azure_videoindexer [label="ampav.azure.videoindexer"];
+        azure_videoindexer -> cloud_azure_videoindexer [color="red"];
+        whisper [label="ampav.whisper"];
+        parakeet [label="ampav.parakeet"];
+        create_vtt [label="ampav.file_formats.webvtt"];
+    }
+
+    subgraph cluster_jupyter_1 {
+        label = "User 1's Jupyter Notebook Instance";
+        j1_notebook1 [label="Step 1: Optionally upload media"];
+        j1_notebook2 [label="Step 2: AWS Transcribe"];        
+        j1_notebook2 -> aws_transcribe;
+        j1_notebook3 [label="Step 3: Create a VTT"];
+        j1_notebook3 -> create_vtt;
+        j1_notebook4 [label="Step 4: AWS Comprehend"];
+        j1_notebook4 -> aws_comprehend;
+    }
+
+    mco_transcription_rest [label="MCO Transcription REST Service"];
+    mco_transcription_rest -> aws_transcribe;
+    
+    generic_transcription_rest [label="Generic Transcription REST Service"];
+    generic_transcription_rest -> whisper;
+    generic_transcription_rest -> parakeet;
+    generic_transcription_rest -> azure_videoindexer;
+    generic_transcription_rest -> aws_transcribe;
+
+    random_transcriber [label="Transcriber User"];
+    random_transcriber -> generic_transcription_rest [color="red"];
+
+
+    mco [label="Media Collections Online"];
+    mco -> mco_transcription_rest [color="red"];
+    
+
+    subgraph cluster_one_off {
+        label="One-off Script For VTT";
+        oo_step1 [label="Step 1: get transcription"];
+        oo_step1 -> parakeet;
+        oo_step2 [label="Step 2: create the vtt"];
+        oo_step2 -> create_vtt;
+    }
+
+
+}
