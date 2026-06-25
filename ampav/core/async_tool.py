@@ -5,6 +5,7 @@ from enum import StrEnum, auto
 from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 from ampav.core.schema.tool import ToolOutput
+from ampav.core.schema.basemodel import AmpAVBaseModel
 
 
 class AsyncStatusCode(StrEnum):
@@ -26,7 +27,7 @@ class ToolError(RuntimeError):
     """Base exception for tool-level execution failures."""
 
 
-class AsyncJobStatus(BaseModel):
+class AsyncJobStatus(AmpAVBaseModel):
     """Status of an async job.
     
     Implementors may return a subclass with additional information which would
@@ -48,7 +49,7 @@ class AsyncJobStatus(BaseModel):
 
     @property
     def is_done(self) -> bool:
-        """Return true if the remote job is finished."""
+        """Return true if the async job is finished."""
         return self.status in {
             AsyncStatusCode.SUCCEEDED,
             AsyncStatusCode.FAILED,
@@ -60,15 +61,15 @@ class AsyncTool:
 
     polling_interval: float = 30
     """Default Polling interval to check if finished.  May be ignored by
-       implementations that use other methods to check if a job has completed"""
+       implementations that uses other methods to check if a job has completed"""
 
     def submit(self, *args: Any, **kwargs: Any) -> str:
-        """Submit a async job and return a job id string."""
+        """Submit an async job and return a job id string."""
         raise NotImplementedError("submit must be implemented by the tool")
 
 
     def list_jobs(self) -> list[AsyncJobStatus]:
-        """Return a list of job ids known by the implementation
+        """Return a list of job status info for all jobs known by the implementation
         
         Note: The implementation should restrict the returned jobs to ones that the
         library tool has created, but this is not guaranteed.
@@ -100,12 +101,12 @@ class AsyncTool:
     def get_result(self, job_id: str) -> ToolOutput | None:
         """Return AMPAV tool output when ready, otherwise return None.
 
-        When the result is has been successfully retrieved the job will be
+        When the result has been successfully retrieved the job will be
         cleaned up.
 
         If the job doesn't exist, a KeyError will be raised.
 
-        Failed jobs will raise a ToolError with relevant details.
+        Failed jobs will be cleaned up and raise a ToolError with relevant details.
         """
         raise NotImplementedError("get_result must be implemented by the tool")
 
