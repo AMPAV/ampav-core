@@ -3,144 +3,154 @@
 import time
 from enum import StrEnum, auto
 from typing import Any
-
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, ConfigDict, Field
 from ampav.core.schema.tool import ToolOutput
+from ampav.core.schema.basemodel import AmpAVBaseModel
 
 
 class AsyncStatusCode(StrEnum):
-    """Common async job states across remote tool providers."""
-
+    """Common async job status codes."""
     QUEUED = auto()
+    """The job is queued and hasn't started processing"""
+    
     IN_PROGRESS = auto()
+    """The job is currently processing"""
+
     SUCCEEDED = auto()
+    """The job has successfully completed"""
+
     FAILED = auto()
-    CANCELED = auto()
-    PARTIAL_SUCCESS = auto()
+    """The job has failed"""
 
 
 class ToolError(RuntimeError):
     """Base exception for tool-level execution failures."""
 
 
-class AsyncJobStatus(BaseModel):
-    """Serializable base status for a remote async job.
-
-    Providers may return subclasses with additional provider-specific fields.
-    `progress` is a percentage in the range 0-100. Providers that do not expose
-    progress should leave it at 0 until the job reaches a terminal status.
+class AsyncJobStatus(AmpAVBaseModel):
+    """Status of an async job.
+    
+    Implementors may return a subclass with additional information which would
+    be populated when get_status(..., details=True).
     """
+    model_config = ConfigDict(use_enum_values=True) # make sure the status is rendered
 
     job_id: str
+    """An opaque job_id that is used to refer to the job"""
+
     status: AsyncStatusCode
+    """The current job status"""
+
     progress: float = Field(default=0, ge=0, le=100)
+    """Percentage of completion.  Only valid when the status is IN_PROGRESS"""
+
     message: str | None = None
+    """Status message at this point in the processing"""
 
     @property
     def is_done(self) -> bool:
-        """Return true when the remote job no longer needs polling."""
+        """Return true if the async job is finished."""
         return self.status in {
             AsyncStatusCode.SUCCEEDED,
             AsyncStatusCode.FAILED,
-            AsyncStatusCode.CANCELED,
-            AsyncStatusCode.PARTIAL_SUCCESS,
         }
 
 
 class AsyncTool:
-    """Base class for AMPAV tools that run as remote asynchronous jobs."""
+    """Base class for asynchronous AMPAV tools."""
 
     polling_interval: float = 30
-    timeout: float | None = None
-    cleanup: bool = True
+    """Default Polling interval to check if finished.  May be ignored by
+       implementations that uses other methods to check if a job has completed"""
 
-    def submit(self, *args: Any, **kwargs: Any) -> Any:
-        """Submit a remote async job and return the provider job handle.
+    def submit(self, *args: Any, **kwargs: Any) -> str:
+        """Submit an async job and return a job id string."""
+        raise NotImplementedError("submit must be implemented by the tool")
 
-        Providers may return any handle type they can pass back to the other
-        lifecycle methods. Prefer serializable handles when practical.
+
+    def list_jobs(self) -> list[AsyncJobStatus]:
+        """Return a list of job status info for all jobs known by the implementation
+        
+        Note: The implementation should restrict the returned jobs to ones that the
+        library tool has created, but this is not guaranteed.
         """
-        raise NotImplementedError
+        raise NotImplementedError("list_jobs must be implemented by the tool")
 
-    def cancel(self, job: Any) -> None:
-        """Cancel a remote async job and clean up provider resources if possible."""
-        raise NotImplementedError
 
-    def list_jobs(self) -> Any:
-        """Return provider-native job listing data for recovery/inspection."""
-        raise NotImplementedError
-
-    def get_status(self, job: Any, *, details: bool = False) -> AsyncJobStatus:
+    def get_status(self, job_id: str, details: bool = True) -> AsyncJobStatus:
         """Return progress/status information for a job.
 
-        Keep the default call lightweight. Providers may include heavier
-        provider-specific details when ``details`` is true.
-        """
-        raise NotImplementedError
+        Implementors may include additional provider-specific details when 
+        `details` is true.
 
-    def is_done(self, job: Any) -> bool:
+        If the job doesn't exist, a KeyError will be raised
+
+        Note:  The default value of `details` may vary from tool to tool.
+        """
+        raise NotImplementedError("get_status must be implemented by the tool")
+
+
+    def is_done(self, job_id: str) -> bool:
         """Return true when the job has reached a terminal state.
-
-        Providers may override this when they have a cheaper completion check.
+        
+        If the job doesn't exist, a KeyError will be raised
         """
-        return self.get_status(job, details=False).is_done
+        return self.get_status(job_id, details=False).is_done
 
-    def get_result(self, job: Any) -> ToolOutput | None:
-        """Return AMPAV output when ready, otherwise return None.
 
-        Implementations provide provider-native retrieval and conversion through
-        the internal hooks. Terminal failed/canceled/partial-success jobs raise
-        ``ToolError`` and clean up resources created by the tool when cleanup is
-        enabled.
+    def get_result(self, job_id: str) -> ToolOutput | None:
+        """Return AMPAV tool output when ready, otherwise return None.
+
+        When the result has been successfully retrieved the job will be
+        cleaned up.
+
+        If the job doesn't exist, a KeyError will be raised.
+
+        Failed jobs will be cleaned up and raise a ToolError with relevant details.
         """
-        status = self.get_status(job, details=False)
-        if not status.is_done:
-            return None
+        raise NotImplementedError("get_result must be implemented by the tool")
 
-        try:
-            if status.status != AsyncStatusCode.SUCCEEDED:
-                message = status.message or "no provider message"
-                raise ToolError(f"Async job {status.job_id!r} ended with status {status.status}: {message}")
-
-            external_result = self._get_external_result(job)
-            if external_result is None:
-                raise ToolError(f"Async job {status.job_id!r} succeeded without an available result")
-
-            return self._to_tool_output(job, external_result)
-        finally:
-            if self.cleanup:
-                self._cleanup(job)
 
     def process(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        """Submit a job, wait for completion, clean up, and return AMPAV output."""
-        job = self.submit(*args, **kwargs)
-        started = time.monotonic()
-
-        while not self.is_done(job):
-            if self.timeout is not None and time.monotonic() - started > self.timeout:
-                status = self.get_status(job, details=False)
-                if self.cleanup:
-                    self._cleanup(job)
-                raise TimeoutError(f"Async job {status.job_id!r} did not finish within {self.timeout} seconds")
+        """Run the tool and wait for the output.
+        
+        Generally the implementation will:
+        * Submit a job
+        * wait for completion
+        * clean up
+        * return AMPAV tool output.
+        
+        """
+        job_id = self.submit(*args, **kwargs)
+        while not self.is_done(job_id):
             time.sleep(self.polling_interval)
 
-        result = self.get_result(job)
+        result = self.get_result(job_id)
         if result is None:
             # get_result() owns terminal cleanup. Reaching this branch means
             # is_done() and get_result() disagreed, so avoid double cleanup.
-            status = self.get_status(job, details=False)
-            raise ToolError(f"Async job {status.job_id!r} finished without an available result")
+            raise ToolError(f"Async job {job_id} finished without an available result")
         return result
 
-    def _get_external_result(self, job: Any) -> Any | None:
-        """Return the provider-native result if it is ready, otherwise return None."""
-        raise NotImplementedError
 
-    def _to_tool_output(self, job: Any, result: Any) -> ToolOutput:
-        """Convert a provider-native result into an AMPAV ToolOutput."""
-        raise NotImplementedError
+    @staticmethod
+    def native_to_tool_output(native: Any) -> ToolOutput:
+        """Convert a native result data structure (such as raw AWS Transcribe
+        data) into an AMPAV ToolOutput."""
+        raise NotImplementedError("native_to_tool_output must be implemented by the tool")
 
-    def _cleanup(self, job: Any) -> None:
-        """Clean up temporary resources created by this tool."""
-        return None
+
+    def cleanup(self, job_id: str) -> None:
+        """Clean up temporary resources created by this job.
+        
+        * If the job_id doesn't exist, do nothing
+        * If the job is queued, dequeue it and clean up
+        * If the job is running, stop the job and clean up
+        * If the job has finished, clean up resources.
+
+        This call is blocking and will wait until finished.  If a native job
+        appears to be hung this method may raise an exception.
+        """
+        raise NotImplementedError("cleanup must be implemented by the tool")
+
+    
