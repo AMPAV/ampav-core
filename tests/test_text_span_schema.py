@@ -10,7 +10,7 @@ class TestTextSpanSchema(unittest.TestCase):
         with self.assertRaises(ValidationError):
             TextSpan(text="bad time", start_time=3.0, end_time=2.0)
 
-    def test_transcript_words_text_builds_canonical_text(self):
+    def test_transcript_words_to_text_builds_canonical_text(self):
         transcript = Transcript(
             words=[
                 WordSegment(word="Hello", start_time=0.0, end_time=0.4),
@@ -18,10 +18,10 @@ class TestTextSpanSchema(unittest.TestCase):
             ]
         )
 
-        text, spans = transcript.words_text_with_spans()
+        text, spans = transcript.words_to_text_with_spans()
 
         self.assertEqual(text, "Hello world.")
-        self.assertEqual(transcript.words_text(), "Hello world.")
+        self.assertEqual(transcript.words_to_text(), "Hello world.")
         self.assertEqual([(span.begin_offset, span.end_offset) for span in spans], [(0, 5), (6, 12)])
         self.assertEqual([text[span.begin_offset:span.end_offset] for span in spans], ["Hello", "world."])
 
@@ -34,7 +34,7 @@ class TestTextSpanSchema(unittest.TestCase):
             WordSegment(word="Chen", suffix=".", start_time=2.6, end_time=2.9),
         ]
         transcript = Transcript(words=words)
-        text = transcript.words_text()
+        text = transcript.words_to_text()
         output = NamedEntities(
             text=text,
             spans=[
@@ -57,7 +57,7 @@ class TestTextSpanSchema(unittest.TestCase):
         ]
         transcript = Transcript(words=words)
         output = KeyPhrases(
-            text=transcript.words_text(),
+            text=transcript.words_to_text(),
             spans=[KeyPhrase(text="IU", begin_offset=0, end_offset=2)],
         )
 

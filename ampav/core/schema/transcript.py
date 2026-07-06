@@ -25,12 +25,12 @@ class Transcript(AmpAVBaseModel):
     languages: list[str] | None = Field(None, description="List of languages in the transcript")
 
 
-    def words_text(self, *, separator: str = " ") -> str:
+    def words_to_text(self, *, separator: str = " ") -> str:
         """Build canonical text from transcript words."""
         return words_to_text(self.words, separator=separator)
 
 
-    def words_text_with_spans(self, *, separator: str = " ") -> tuple[str, list[WordTextSpan]]:
+    def words_to_text_with_spans(self, *, separator: str = " ") -> tuple[str, list[WordTextSpan]]:
         """Build canonical text and word character spans from transcript words."""
         return words_to_text_with_spans(self.words, separator=separator)
 
