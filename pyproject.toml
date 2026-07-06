@@ -1,6 +1,6 @@
 [project]
 name = "ampav-core"
-version = "0.0.16"
+version = "0.0.17"
 description = "Core Libraries/Schemas/Utilties for the AMPAV environment"
 readme = "README.md"
 license = "Apache-2.0"
@@ -36,4 +36,3 @@ Issues = "https://github.com/AMPAV/ampav-core/issues"
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
-
