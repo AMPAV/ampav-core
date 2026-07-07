@@ -15,12 +15,6 @@ class Transcript(AmpAVBaseModel):
                                                     description="Timestamped paragraphs")
     languages: list[str] | None = Field(None, description="List of languages in the transcript")
 
-
-    def words_to_text(self, *, separator: str = " ") -> str:
-        """Build canonical text from transcript words."""
-        return words_to_text(self.words, separator=separator)
-
-
     def reformat_paragraphs(self, paragraph_gap: float=1.5, 
                             max_paragraph: float=10):
         """

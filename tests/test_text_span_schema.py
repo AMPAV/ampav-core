@@ -3,6 +3,7 @@ import unittest
 from pydantic import ValidationError
 
 from ampav.core.schema import KeyPhrase, KeyPhrases, NamedEntity, NamedEntities, TextSpan, Transcript, WordSegment
+from ampav.core.schema.transcript import words_to_text
 
 
 class TestTextSpanSchema(unittest.TestCase):
@@ -18,7 +19,7 @@ class TestTextSpanSchema(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(transcript.words_to_text(), "Hello world.")
+        self.assertEqual(words_to_text(transcript.words), "Hello world.")
 
     def test_named_entities_align_timestamps_to_overlapping_words(self):
         words = [
@@ -29,7 +30,7 @@ class TestTextSpanSchema(unittest.TestCase):
             WordSegment(word="Chen", suffix=".", start_time=2.6, end_time=2.9),
         ]
         transcript = Transcript(words=words)
-        text = transcript.words_to_text()
+        text = words_to_text(transcript.words)
         output = NamedEntities(
             text=text,
             spans=[
@@ -52,7 +53,7 @@ class TestTextSpanSchema(unittest.TestCase):
         ]
         transcript = Transcript(words=words)
         output = KeyPhrases(
-            text=transcript.words_to_text(),
+            text=words_to_text(transcript.words),
             spans=[KeyPhrase(text="IU", begin_offset=0, end_offset=2)],
         )
 
