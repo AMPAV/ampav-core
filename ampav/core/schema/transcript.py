@@ -5,15 +5,6 @@ from .segments import WordSegment, ParagraphSegment
 import logging
 
 
-class WordTextSpan(AmpAVBaseModel):
-    """Character span for a word in canonical transcript text."""
-
-    word_index: int = Field(description="Index of the word in the transcript word list")
-    begin_offset: int = Field(ge=0, description="Character offset where the word text starts")
-    end_offset: int = Field(ge=0, description="Character offset where the word text ends")
-    word: WordSegment = Field(description="Word represented by this text span")
-
-
 class Transcript(AmpAVBaseModel):
     ampav_format: Literal['transcript/1'] = 'transcript/1'
     media_duration: float | None = Field(default=None, description="Duration of the media, if known")
@@ -28,11 +19,6 @@ class Transcript(AmpAVBaseModel):
     def words_to_text(self, *, separator: str = " ") -> str:
         """Build canonical text from transcript words."""
         return words_to_text(self.words, separator=separator)
-
-
-    def words_to_text_with_spans(self, *, separator: str = " ") -> tuple[str, list[WordTextSpan]]:
-        """Build canonical text and word character spans from transcript words."""
-        return words_to_text_with_spans(self.words, separator=separator)
 
 
     def reformat_paragraphs(self, paragraph_gap: float=1.5, 
@@ -62,35 +48,7 @@ class Transcript(AmpAVBaseModel):
 
 def words_to_text(words: list[WordSegment], *, separator: str = " ") -> str:
     """Build canonical text from a list of transcript words."""
-    return words_to_text_with_spans(words, separator=separator)[0]
-
-
-def words_to_text_with_spans(
-    words: list[WordSegment],
-    *,
-    separator: str = " ",
-) -> tuple[str, list[WordTextSpan]]:
-    """Build canonical text and word character spans from transcript words."""
-    text_parts: list[str] = []
-    spans: list[WordTextSpan] = []
-    offset = 0
-    for word_index, word in enumerate(words):
-        if word_index > 0:
-            text_parts.append(separator)
-            offset += len(separator)
-        word_text = word.to_str()
-        begin_offset = offset
-        offset += len(word_text)
-        spans.append(
-            WordTextSpan(
-                word_index=word_index,
-                begin_offset=begin_offset,
-                end_offset=offset,
-                word=word,
-            )
-        )
-        text_parts.append(word_text)
-    return "".join(text_parts), spans
+    return separator.join(word.to_str() for word in words)
 
 
 def words_to_paragraphs(words: list[WordSegment], 

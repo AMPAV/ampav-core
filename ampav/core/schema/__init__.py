@@ -1,6 +1,6 @@
 from .av_metadata import AVMetadata
 from .tool import ToolOutput
-from .transcript import Transcript, WordTextSpan
+from .transcript import Transcript
 from .text_span import TextSpan, TextSpans
 from .named_entity import NamedEntity, NamedEntities
 from .key_phrase import KeyPhrase, KeyPhrases
@@ -10,7 +10,6 @@ __all__ = [
     "AVMetadata",
     "ToolOutput",
     "Transcript",
-    "WordTextSpan",
     "TextSpan",
     "TextSpans",
     "NamedEntity",

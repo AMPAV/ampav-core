@@ -18,12 +18,7 @@ class TestTextSpanSchema(unittest.TestCase):
             ]
         )
 
-        text, spans = transcript.words_to_text_with_spans()
-
-        self.assertEqual(text, "Hello world.")
         self.assertEqual(transcript.words_to_text(), "Hello world.")
-        self.assertEqual([(span.begin_offset, span.end_offset) for span in spans], [(0, 5), (6, 12)])
-        self.assertEqual([text[span.begin_offset:span.end_offset] for span in spans], ["Hello", "world."])
 
     def test_named_entities_align_timestamps_to_overlapping_words(self):
         words = [
@@ -76,7 +71,20 @@ class TestTextSpanSchema(unittest.TestCase):
         self.assertEqual(output.spans[0].end_time, None)
         self.assertEqual(messages, ["Text span 0 timestamp alignment skipped: missing offsets."])
 
-    def test_alignment_returns_message_when_source_text_differs(self):
+    def test_alignment_returns_message_when_source_text_is_missing(self):
+        words = [WordSegment(word="Amazon", start_time=1.0, end_time=1.5)]
+        output = NamedEntities(
+            spans=[NamedEntity(text="Amazon", entity_type="ORGANIZATION", begin_offset=0, end_offset=6)],
+        )
+
+        messages = output.align_timestamps(words)
+
+        self.assertEqual(
+            messages,
+            ["Text span timestamp alignment skipped: missing source text."],
+        )
+
+    def test_alignment_returns_message_when_source_text_length_differs(self):
         words = [WordSegment(word="Amazon", start_time=1.0, end_time=1.5)]
         output = NamedEntities(
             text="Different source text",
@@ -87,7 +95,7 @@ class TestTextSpanSchema(unittest.TestCase):
 
         self.assertEqual(
             messages,
-            ["Text span timestamp alignment skipped: source text does not match the text built from words."],
+            ["Text span timestamp alignment skipped: source text length does not match the text built from words."],
         )
 
 

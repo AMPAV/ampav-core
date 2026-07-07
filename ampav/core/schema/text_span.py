@@ -3,7 +3,6 @@ from typing import Self
 
 from .basemodel import AmpAVBaseModel
 from .segments import Segment, WordSegment
-from .transcript import words_to_text_with_spans
 
 
 class TextSpan(Segment):
@@ -35,17 +34,20 @@ class TextSpans(AmpAVBaseModel):
     def align_timestamps(self, words: list[WordSegment], *, separator: str = " ") -> list[str]:
         """Align text spans to timestamped transcript words.
 
-        The span offsets must refer to the canonical text built from `words`
-        with the same separator. The method leaves spans unchanged when
+        `text` must be the canonical source text used for extraction, and span
+        offsets must refer to that text. The method leaves spans unchanged when
         alignment cannot be done confidently and returns human-readable messages.
         """
-        source_text, word_spans = words_to_text_with_spans(words, separator=separator)
         messages: list[str] = []
         if not self.text:
-            self.text = source_text
-        elif self.text != source_text:
             return [
-                "Text span timestamp alignment skipped: source text does not match the text built from words."
+                "Text span timestamp alignment skipped: missing source text."
+            ]
+        word_spans = _word_offsets(words, separator=separator)
+        word_text_length = word_spans[-1][1] if word_spans else 0
+        if word_text_length != len(self.text):
+            return [
+                "Text span timestamp alignment skipped: source text length does not match the text built from words."
             ]
 
         sorted_spans = sorted(
@@ -57,19 +59,19 @@ class TextSpans(AmpAVBaseModel):
             if span.begin_offset is None or span.end_offset is None:
                 messages.append(f"Text span {span_index} timestamp alignment skipped: missing offsets.")
                 continue
-            if span.begin_offset < 0 or span.end_offset > len(source_text) or span.end_offset <= span.begin_offset:
+            if span.begin_offset < 0 or span.end_offset > len(self.text) or span.end_offset <= span.begin_offset:
                 messages.append(f"Text span {span_index} timestamp alignment skipped: offsets are out of range.")
                 continue
 
-            while word_index < len(word_spans) and word_spans[word_index].end_offset <= span.begin_offset:
+            while word_index < len(word_spans) and word_spans[word_index][1] <= span.begin_offset:
                 word_index += 1
 
             overlap_index = word_index
             overlapping_words: list[WordSegment] = []
-            while overlap_index < len(word_spans) and word_spans[overlap_index].begin_offset < span.end_offset:
-                word_span = word_spans[overlap_index]
-                if word_span.begin_offset < span.end_offset and word_span.end_offset > span.begin_offset:
-                    overlapping_words.append(word_span.word)
+            while overlap_index < len(word_spans) and word_spans[overlap_index][0] < span.end_offset:
+                word_begin, word_end, word = word_spans[overlap_index]
+                if word_begin < span.end_offset and word_end > span.begin_offset:
+                    overlapping_words.append(word)
                 overlap_index += 1
 
             if not overlapping_words:
@@ -86,3 +88,15 @@ class TextSpans(AmpAVBaseModel):
             span.end_time = last_word.end_time
 
         return messages
+
+
+def _word_offsets(words: list[WordSegment], *, separator: str) -> list[tuple[int, int, WordSegment]]:
+    word_spans: list[tuple[int, int, WordSegment]] = []
+    offset = 0
+    for word_index, word in enumerate(words):
+        if word_index > 0:
+            offset += len(separator)
+        begin_offset = offset
+        offset += len(word.to_str())
+        word_spans.append((begin_offset, offset, word))
+    return word_spans
