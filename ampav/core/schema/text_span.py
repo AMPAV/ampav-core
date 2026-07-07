@@ -35,8 +35,11 @@ class TextSpans(AmpAVBaseModel):
         """Align text spans to timestamped transcript words.
 
         `text` must be the canonical source text used for extraction, and span
-        offsets must refer to that text. The method leaves spans unchanged when
-        alignment cannot be done confidently and returns human-readable messages.
+        offsets must refer to that text. A word is considered matched when its
+        canonical character interval overlaps the span interval:
+        `word_begin < span_end and word_end > span_begin`.
+        The method leaves spans unchanged when alignment cannot be done
+        confidently and returns human-readable messages.
         """
         messages: list[str] = []
         if not self.text:
