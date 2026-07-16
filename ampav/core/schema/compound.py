@@ -6,9 +6,13 @@ from .transcript import Transcript
 from .named_entity import NamedEntities
 from .key_phrase import KeyPhrases
 from .raw import RawData, RawBinary
+from .audio import AudioEffects
+from .image import Image
+from .object import DetectedObjects
 
 OutputTypes = Annotated[Union[AVMetadata, Transcript, 
-                              NamedEntities, KeyPhrases, RawData, RawBinary], Field(discriminator='ampav_format')]
+                              NamedEntities, KeyPhrases, RawData, RawBinary,
+                              Image, AudioEffects, DetectedObjects], Field(discriminator='ampav_format')]
 
 class CompoundOutput(AmpAVBaseModel):
     """This is for tools which output multiple data types"""
