@@ -37,7 +37,7 @@ class Image(AmpAVBaseModel):
         tmp = io.BytesIO()
         image.save(tmp, format, **kwargs)
         self.data = tmp.getvalue()
-        
+
 
 
 class BoundingBox(AmpAVBaseModel):
@@ -55,3 +55,10 @@ class BoundingBox(AmpAVBaseModel):
     @property
     def height(self):
         return abs(self.y2 - self.y1)
+    
+
+class OcrRegion(BoundingBox):
+    """ A region of OCR Text """
+    angle: float = Field(0.0, description="Text Angle")
+    text: str | None = Field(None, description="OCR Text")
+    language: str | None = Field(None, description="Language used")
