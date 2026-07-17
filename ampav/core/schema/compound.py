@@ -9,10 +9,12 @@ from .raw import RawData, RawBinary
 from .audio import AudioEffects
 from .image import Image
 from .object import DetectedObjects
+from .video import VideoPatterns
 
 OutputTypes = Annotated[Union[AVMetadata, Transcript, 
                               NamedEntities, KeyPhrases, RawData, RawBinary,
-                              Image, AudioEffects, DetectedObjects], Field(discriminator='ampav_format')]
+                              Image, AudioEffects, DetectedObjects,
+                              VideoPatterns], Field(discriminator='ampav_format')]
 
 class CompoundOutput(AmpAVBaseModel):
     """This is for tools which output multiple data types"""

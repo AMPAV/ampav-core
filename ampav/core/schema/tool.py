@@ -12,10 +12,12 @@ from logging import LogRecord
 from .audio import AudioEffects
 from .image import Image
 from .object import DetectedObjects
+from .video import VideoPatterns
 
 OutputTypes = Annotated[Union[AVMetadata, Transcript, NamedEntities, 
                               KeyPhrases, CompoundOutput,
-                              AudioEffects, Image, DetectedObjects], Field(discriminator='ampav_format')]
+                              AudioEffects, Image, DetectedObjects,
+                              VideoPatterns], Field(discriminator='ampav_format')]
 
 
 class ToolOutput(AmpAVBaseModel):
