@@ -8,9 +8,9 @@ from .image import Image, BoundingBox
 
 class DetectedObject(Segment, BoundingBox):
     image: Image | None = Field(None, description="Image of the object")
-    name: str | None = Field(None, description="text name of the object")
-    type: str | None = Field(None, description="Tool-specific type name")
-    wikidata_id: str | None = Field(None, description="Wikidata id")    
+    text: str | None = Field(None, description="text name of the object")
+    label: str | None = Field(None, description="Tool-specific label name")
+    
 
 
 class DetectedObjects(AmpAVBaseModel):

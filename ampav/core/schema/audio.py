@@ -31,8 +31,8 @@ class AudioEffectSegment(Segment):
 
        The values should be normalized to lower case
        """
-    effect: AudioEffectType = Field(AudioEffectType.UNKNOWN, descriptions="Effect type present for this range")
-    name: str | None = Field(None, description="The name of audio effect")    
+    type: AudioEffectType = Field(AudioEffectType.UNKNOWN, descriptions="Effect type present for this range")
+    label: str | None = Field(None, description="The label for audio effect")    
 
 
 class AudioEffects(AmpAVBaseModel):

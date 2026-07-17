@@ -28,8 +28,8 @@ class VideoPatternType(StrEnum):
 class VideoPattern(Segment):
     """Representation of a video pattern segment (color bars, black, etc)       
        """
-    pattern: VideoPatternType = Field(VideoPatternType.UNKNOWN, description="The video pattern")
-    name: str | None = Field(None, description="The name of the video pattern")
+    type: VideoPatternType = Field(VideoPatternType.UNKNOWN, description="The video pattern type")
+    label: str | None = Field(None, description="The label for the video pattern")
     
 
 
