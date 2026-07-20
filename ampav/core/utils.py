@@ -2,9 +2,15 @@
 General purpos utilities
 """
 
+from pathlib import Path
+
 import yaml
 from pydantic import BaseModel
+import pickle
 from functools import reduce
+import json
+
+from ampav.core.schema.basemodel import AmpAVBaseModel
 
 def duration2hhmmss(duration: float) -> str:
     """
@@ -62,3 +68,40 @@ def rgetattr(obj, attr, *args):
     return reduce(_getattr, [obj] + attr.split('.'))
 
 
+def dump_data(data: AmpAVBaseModel | dict, format: Path, output: Path=None, **kwargs):
+    """Dump a dict, pydantic BaseModel or AmpAVBaseModel to a Path, or stdout
+       if output is None"""
+    match format:
+        case "yaml":
+            if isinstance(data, AmpAVBaseModel):
+                res = data.model_dump_yaml(**kwargs)
+            elif isinstance(data, BaseModel):
+                res = yaml.safe_dump(data.model_dump())
+            else:
+                res = yaml.safe_dump(data, **kwargs)            
+        case "json":
+            if isinstance(data, BaseModel):
+                res = data.model_dump_json(**kwargs)
+            else:
+                res = json.dumps(data, **kwargs)
+        case "pickle":
+            res = pickle.dumps(data)
+        case _:
+            raise ValueError(f"Unknown data format {format}")
+    if output is None:
+        print(res)
+    else:
+        if format == "pickle":
+            output.write_bytes(res)
+        else:
+            output.write_text(res)
+
+
+def load_data(file: Path) -> dict:
+    """Load dict data from a file in pickle, json, or yaml format"""
+    data = file.read_bytes()
+    try:
+        return pickle.loads(data)
+    except pickle.PickleError:
+        return yaml.safe_load(str(data, encoding='utf-8'))
+    

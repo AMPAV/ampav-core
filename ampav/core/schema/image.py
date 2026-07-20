@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+import base64
+
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer
 from typing import Literal, Annotated, Union, Any
 from .basemodel import AmpAVBaseModel
 from .segments import Segment
@@ -7,37 +9,38 @@ import PIL.Image
 import io
 
 
+# 
+# Create a custom data type for storing images inline
+#
+def validate_pil_image(v: Any) -> PIL.Image.Image:
+    if isinstance(v, PIL.Image.Image):
+        return v
+    if isinstance(v, bytes):
+        return PIL.Image.open(io.BytesIO(v))
+    if isinstance(v, str) and v.startswith('data:image/png;base64,'):
+        # this is a base64-encoded image
+        v = base64.b64decode(v[22:])
+        return PIL.Image.open(io.BytesIO(v))
+
+    raise ValueError("Input must be PIL image or bytes")
+
+
+def serialize_pil_image(img: PIL.Image.Image):
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    return "data:image/png;base64," + img_str
+
+
+SerializableImage = Annotated[PIL.Image.Image, 
+                          BeforeValidator(validate_pil_image),
+                          PlainSerializer(serialize_pil_image, return_type=str)]
+
+
 class Image(AmpAVBaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     ampav_format: Literal['image/1'] = 'image/1'
     filename: str | None = Field(None, description="Filename")
-    width: int | None = Field(None, description="width")
-    height: int | None = Field(None, description="height")
-    data: bytes | None = Field(None, description="raw image data")
-
-    def get_image(self) -> PIL.Image.Image:
-        """ Convert the data into a PIL Image """
-        image = PIL.Image.open(io.BytesIO(self.data))
-        if self.filename is None:
-            self.filename = image.filename
-        if self.width is None:
-            self.width = image.width
-        if self.height is None:
-            self.height = image.height
-        return image
-            
-
-    def set_image(self, image: PIL.Image.Image,
-                  filename: str, format: str | None=None,
-                  **kwargs):
-        """ Store the given PIL Image into the object.  The parameters are
-            the same as Image.save()"""
-        self.width = image.width
-        self.height = image.height
-        self.filename = filename        
-        tmp = io.BytesIO()
-        image.save(tmp, format, **kwargs)
-        self.data = tmp.getvalue()
-
 
 
 class BoundingBox(AmpAVBaseModel):
