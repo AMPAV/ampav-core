@@ -15,10 +15,11 @@ from .audio import AudioEffects
 from .image import Image
 from .object import DetectedObjects
 from .video import VideoOcr, VideoPatterns, VideoSegments
+from .sentiment import Sentiments
 
 OutputTypes = Annotated[Union[AVMetadata, Transcript, NamedEntities, 
                               KeyPhrases, CompoundOutput,
-                              AudioEffects, Image, DetectedObjects,
+                              AudioEffects, Image, DetectedObjects, Sentiments,
                               VideoPatterns, VideoOcr, VideoSegments, Annotations], Field(discriminator='ampav_format')]
 
 

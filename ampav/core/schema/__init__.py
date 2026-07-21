@@ -14,10 +14,12 @@ from .named_entity import NamedEntityType, NamedEntity, NamedEntities
 from .object import DetectedObject, DetectedObjects
 from .raw import RawData, RawBinary
 from .segments import Segment, WordSegment, ParagraphSegment
+from .sentiment import Sentiment, Sentiments, SentimentType
 from .text_span import TextSpan, TextSpans
 from .tool import ToolOutput
 from .transcript import Transcript
 from .video import VideoOcrResult, VideoOcr, VideoPatternType, VideoPattern, VideoPatterns, VideoSegmentType, VideoSegment, VideoSegments
+
 
 from ..utils import load_data
 from pathlib import Path
@@ -27,7 +29,8 @@ AmpAVDataClass = Annotated[Union["Annotations", "AudioEffects", "AVMetadata",
                                  "CompoundOutput", "Image", "KeyPhrases",
                                  "NamedEntities", "DetectedObjects", "RawData", 
                                  "RawBinary", "ToolOutput", "Transcript",
-                                 "VideoOcr", "VideoPatterns", "VideoSegments"],
+                                 "VideoOcr", "VideoPatterns", "VideoSegments",
+                                 "Sentiments"],
                            Field(discriminator="ampav_format")]
 
 
@@ -61,6 +64,7 @@ __all__ = [
     "AnnotationType", 
     "AudioEffectType",
     "NamedEntityType", 
+    "SentimentType",
     "VideoPatternType", "VideoSegmentType",
 
     # Standalone data classes
@@ -73,6 +77,7 @@ __all__ = [
     "NamedEntities",
     "DetectedObjects",
     "RawData", "RawBinary",
+    "Sentiments",
     "ToolOutput",
     "Transcript",
     "VideoOcr", "VideoPatterns", "VideoSegments",    
