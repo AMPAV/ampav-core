@@ -20,6 +20,9 @@ class VideoPatternType(StrEnum):
     NOISE = auto()
     "Snow or other random signal"
 
+    CREDITS = auto()
+    "Credits"
+
     OTHER = auto()
     "Other patterns"
 
