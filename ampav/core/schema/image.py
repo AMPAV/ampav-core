@@ -1,10 +1,8 @@
 import base64
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer
-from typing import Literal, Annotated, Union, Any
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer
+from typing import Literal, Annotated, Any
 from .basemodel import AmpAVBaseModel
-from .segments import Segment
-from enum import StrEnum, auto
 import PIL.Image
 import io
 
@@ -38,8 +36,10 @@ SerializableImage = Annotated[PIL.Image.Image,
 
 
 class Image(AmpAVBaseModel):
+    """An Image"""
     model_config = ConfigDict(arbitrary_types_allowed=True)
     ampav_format: Literal['image/1'] = 'image/1'
+    image: SerializableImage | None = Field(None, description="The image itself")
     filename: str | None = Field(None, description="Filename")
 
 

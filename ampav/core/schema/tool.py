@@ -1,5 +1,7 @@
 from pydantic import Field, field_validator
 from typing import Literal, Annotated, Union, Any
+
+from ampav.core.schema.annotation import Annotations
 from .basemodel import AmpAVBaseModel
 from .av_metadata import AVMetadata
 from .transcript import Transcript
@@ -17,7 +19,7 @@ from .video import VideoOcr, VideoPatterns, VideoSegments
 OutputTypes = Annotated[Union[AVMetadata, Transcript, NamedEntities, 
                               KeyPhrases, CompoundOutput,
                               AudioEffects, Image, DetectedObjects,
-                              VideoPatterns, VideoOcr, VideoSegments], Field(discriminator='ampav_format')]
+                              VideoPatterns, VideoOcr, VideoSegments, Annotations], Field(discriminator='ampav_format')]
 
 
 class ToolOutput(AmpAVBaseModel):

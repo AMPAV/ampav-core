@@ -1,5 +1,7 @@
 from pydantic import Field
 from typing import Callable, Literal, Annotated, Union, Any
+
+from ampav.core.schema.annotation import Annotations
 from .basemodel import AmpAVBaseModel
 from .av_metadata import AVMetadata
 from .transcript import Transcript
@@ -14,7 +16,7 @@ from .video import VideoOcr, VideoPatterns, VideoSegments
 OutputTypes = Annotated[Union[AVMetadata, Transcript, 
                               NamedEntities, KeyPhrases, RawData, RawBinary,
                               Image, AudioEffects, DetectedObjects,
-                              VideoPatterns, VideoOcr, VideoSegments], Field(discriminator='ampav_format')]
+                              VideoPatterns, VideoOcr, VideoSegments, Annotations], Field(discriminator='ampav_format')]
 
 class CompoundOutput(AmpAVBaseModel):
     """This is for tools which output multiple data types"""

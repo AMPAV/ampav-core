@@ -9,7 +9,7 @@ from pydantic import BaseModel
 import pickle
 from functools import reduce
 import json
-
+import sys
 from ampav.core.schema.basemodel import AmpAVBaseModel
 
 def duration2hhmmss(duration: float) -> str:
@@ -85,13 +85,19 @@ def dump_data(data: AmpAVBaseModel | dict, format: Path, output: Path=None, **kw
             else:
                 res = json.dumps(data, **kwargs)
         case "pickle":
-            res = pickle.dumps(data)
+            if isinstance(data, BaseModel):
+                res = pickle.dumps(data.model_dump())
+            else:
+                res = pickle.dumps(data)
         case _:
             raise ValueError(f"Unknown data format {format}")
     if output is None:
-        print(res)
+        if isinstance(res, bytes):
+            sys.stdout.buffer.write(res)
+        else:
+            print(res)
     else:
-        if format == "pickle":
+        if isinstance(res, bytes):
             output.write_bytes(res)
         else:
             output.write_text(res)

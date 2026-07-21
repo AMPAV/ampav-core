@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import Literal, Annotated, Union, Any
+from pydantic import Field
+from typing import Literal
 from .basemodel import AmpAVBaseModel
 from .segments import Segment
 from enum import StrEnum, auto
@@ -29,13 +29,14 @@ class AudioEffectSegment(Segment):
        For values other than silence, they are included in text output 
        surrounded by square brackets:  "[Gunshot or explosion]"
 
-       The values should be normalized to lower case
+       The labels should be normalized to lower case
        """
     type: AudioEffectType = Field(AudioEffectType.UNKNOWN, descriptions="Effect type present for this range")
     label: str | None = Field(None, description="The label for audio effect")    
 
 
 class AudioEffects(AmpAVBaseModel):
+    """A collection of audio events found in the media"""
     ampav_format: Literal['audio_effects/1'] = 'audio_effects/1'
     media_duration: float | None = Field(default=None, description="Duration of the media, if known")
     effects: list[AudioEffectSegment] = Field(default_factory=list, description="The audio effects in the media")
