@@ -3,51 +3,50 @@ from typing import Literal, Annotated, Union, Any
 
 from ampav.core.schema.image import Image, OcrRegion
 from .basemodel import AmpAVBaseModel
-from .segments import Segment
+from .segments import ConfidenceSegment, Segment
 from enum import StrEnum, auto
 
 class VideoPatternType(StrEnum):
     """Generic classification of the video pattern"""
     BLACK = auto()
     "Solid black Screen"
-
     SOLID = auto()
     "Solid color, not black"
-
     COLORBARS = auto()
     "Color Bars"
-
     NOISE = auto()
     "Snow or other random signal"
-
     CREDITS = auto()
     "Credits"
-
     OTHER = auto()
     "Other patterns"
-
     UNKNOWN = auto()
-    "Unknown video pattern"
+    "Unknown/Unset video pattern"
 
 
-class VideoPattern(Segment):
+class VideoPattern(AmpAVBaseModel):
     """Representation of a video pattern segment (color bars, black, etc)       
        """
-    type: VideoPatternType = Field(VideoPatternType.UNKNOWN, description="The video pattern type")
-    label: str | None = Field(None, description="The label for the video pattern")
-    
+    type: VideoPatternType = VideoPatternType.UNKNOWN
+    "The video pattern type"
+    label: str | None = None
+    "The label for the video pattern"
+    instances: list[ConfidenceSegment] = Field(default_factory=list)
+    "Where this video pattern appears in the media"
 
 
 class VideoPatterns(AmpAVBaseModel):
     """A collection of video patterns found in the media"""
     ampav_format: Literal['video_patterns/1'] = 'video_patterns/1'
-    media_duration: float | None = Field(default=None, description="Duration of the media, if known")
-    patterns: list[VideoPattern] = Field(default_factory=list, description="The video patterns in the media")
+    media_duration: float | None = None
+    "Duration of the media, if known"
+    patterns: list[VideoPattern] = Field(default_factory=list)
+    "The video patterns in the media"
 
     
-class VideoOcrResult(Segment, OcrRegion):
+class VideoOcrResult(ConfidenceSegment, OcrRegion):
     """OCR Text Result"""
-    # Segment Gives us confidence and tool_private
+    # ConfidenceSegment Gives us confidence
     # OcrRegion gives us Bounding box and angle, text, language
     pass
 
@@ -55,8 +54,10 @@ class VideoOcrResult(Segment, OcrRegion):
 class VideoOcr(AmpAVBaseModel):
     """A collection of OCR results for the media"""
     ampav_format: Literal['video_ocr/1'] = 'video_ocr/1'
-    media_duration: float | None = Field(default=None, description="Duration of the media, if known")
-    ocr: list[VideoOcrResult] = Field(default_factory=list, description="Everywhere OCR is found")
+    media_duration: float | None = None
+    "Duration of the media, if known"
+    ocr: list[VideoOcrResult] = Field(default_factory=list)
+    "Everywhere OCR is found"
 
 
 class VideoSegmentType(StrEnum):
@@ -68,15 +69,20 @@ class VideoSegmentType(StrEnum):
 
 class KeyFrame(AmpAVBaseModel):
     """A keyframe image with timestamp"""
-    time: float | None = Field(None, description="Time when frame appears")
-    frame: Image | None = Field(None, description="Key Frame Image")
+    time: float | None = None
+    "Time when frame appears"
+    frame: Image | None = None
+    "Key Frame Image"
 
 
 class VideoSegment(Segment):
     """A video segment"""
-    type: VideoSegmentType = Field(VideoSegmentType.UNKNOWN, description="Type of segment")
-    label: str | None = Field(None, description="Label for the segment")
-    keyframes: list[KeyFrame] = Field(default_factory=list, description="Key frames associated with the segment")
+    type: VideoSegmentType = VideoSegmentType.UNKNOWN
+    "Type of segment"
+    label: str | None = None
+    "Label for the segment"
+    keyframes: list[KeyFrame] = Field(default_factory=list)
+    "Key frame images for this segment"
 
 
 class VideoSegments(AmpAVBaseModel):

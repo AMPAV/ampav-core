@@ -39,29 +39,44 @@ class Image(AmpAVBaseModel):
     """An Image"""
     model_config = ConfigDict(arbitrary_types_allowed=True)
     ampav_format: Literal['image/1'] = 'image/1'
-    image: SerializableImage | None = Field(None, description="The image itself")
-    filename: str | None = Field(None, description="Filename")
+    image: SerializableImage | None = None
+    "The image data"
+    filename: str | None = None
+    "Image Filename, if known"
 
 
 class BoundingBox(AmpAVBaseModel):
     """A stereotypical bounding box"""
-    x1: int = Field(None, help="Upper left corner X")
-    y1: int = Field(None, help="Upper left corner Y")
-    x2: int = Field(None, help="Lower right corner X")
-    y2: int = Field(None, help="Lower right corner Y")
+    x1: int = 0
+    "Upper left corner X"
+    y1: int = 0
+    "Upper left corner y"
+    x2: int = 0
+    "Lower right corner x"
+    y2: int = 0
+    "Lower right corner y"
 
     @property
     def width(self):
+        """Bounding box width"""
         return abs(self.x2 - self.x1)
     
 
     @property
     def height(self):
+        """Bounding box height"""
         return abs(self.y2 - self.y1)
     
 
-class OcrRegion(BoundingBox):
+class OcrRegion(AmpAVBaseModel):
     """ A region of OCR Text """
-    angle: float = Field(0.0, description="Text Angle")
-    text: str | None = Field(None, description="OCR Text")
-    language: str | None = Field(None, description="Language used")
+    bounding_box: BoundingBox
+    "Text Bounding box"
+    angle: float = 0.0
+    "Text Angle"
+    text: str | None = None
+    "OCR Text"
+    language: str | None = None
+    "OCR Language"
+
+

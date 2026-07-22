@@ -3,6 +3,7 @@ General purpos utilities
 """
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 from pydantic import BaseModel
@@ -111,3 +112,23 @@ def load_data(file: Path) -> dict:
     except pickle.PickleError:
         return yaml.safe_load(str(data, encoding='utf-8'))
     
+
+def key_finder(data: Any, key: str) -> list:
+    """Find the values for the given key no matter where
+       it is in the data structure"""
+    res = []
+    if isinstance(data, dict):
+        for k, v in data.items():
+            if k == key:
+                res.append(v)
+            else:
+                if isinstance(v, dict):
+                    res.extend(key_finder(v, key))
+                elif isinstance(v, (list, set, tuple)):
+                    for i in v:
+                        res.extend(key_finder(i, key))
+    elif isinstance(data, (set, list, tuple)):
+        for i in data:
+            res.extend(key_finder(i, key))
+
+    return res

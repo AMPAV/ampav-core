@@ -7,7 +7,6 @@ class Segment(AmpAVBaseModel):
     """Base class for a time-based segment"""
     start_time: float | None= Field(None, description="Start time of the segment")
     end_time: float | None = Field(None, description="End time of the segment")
-    confidence: float | None = Field(None, description="Confidence score, normalized to 0-1")
     tool_private: dict[str, Any] | None = Field(None, description="Private data provided by the tool")
 
     def duration(self) -> float:
@@ -23,13 +22,25 @@ class Segment(AmpAVBaseModel):
             return 0
 
 
-class WordSegment(Segment):
+# Most of the AVI segments have a confidence hence this class is needed.  To
+# do it right, I had to change the class hierarchy because WordSegment also 
+# uses a confidence so it's effectively a subclass of this.  Using mixins for
+# the different fields would allow us to keep a relatively flat hiearchy that
+# would avoid these intermediate classes.
+
+class ConfidenceSegment(Segment):
+    "A segment that also has a confidence score"
+    confidence: float | None = Field(None, description="Confidence score, a value between 0 and 1, inclusive")
+
+
+class WordSegment(ConfidenceSegment):
     """Segment representing a word"""
     speaker: str | None = Field(None, description="Speaker of the word")
     prefix: str | None = Field(None, description="Punctuation/whitespace word prefix from transcriber")
     word: str = Field(description="Word text")
     suffix: str | None = Field(None, description="Punctuation/whitespace word suffix from transcriber")
     language: str | None = Field(None, description="Word language")
+    #confidence: float | None = Field(None, description="Confidence score, a value between 0 and 1, inclusive")
         
     @staticmethod
     def from_str(word: str, **kwargs) -> "WordSegment":
