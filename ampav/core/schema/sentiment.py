@@ -36,4 +36,3 @@ class Sentiments(AmpAVBaseModel):
     sentiments: list[Sentiment] = Field(default_factory=list)
     "The sentiments found in the media"
 
-    

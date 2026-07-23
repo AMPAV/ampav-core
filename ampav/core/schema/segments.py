@@ -41,7 +41,7 @@ class WordSegment(ConfidenceSegment):
     suffix: str | None = Field(None, description="Punctuation/whitespace word suffix from transcriber")
     language: str | None = Field(None, description="Word language")
     #confidence: float | None = Field(None, description="Confidence score, a value between 0 and 1, inclusive")
-        
+
     @staticmethod
     def from_str(word: str, **kwargs) -> "WordSegment":
         """
@@ -79,8 +79,3 @@ class ParagraphSegment(Segment):
     text: str | None = Field(None, description="Paragraph text")
     language: str | None = Field(None, description="Language used in paragraph")
     
-
-
-
-
-

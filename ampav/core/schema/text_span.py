@@ -8,7 +8,7 @@ from .segments import Segment, WordSegment
 class TextSpan(Segment):
     """Text span found in source text."""
 
-    text: str = Field(description="Text span recognized in the source text")    
+    text: str = Field(description="Text span recognized in the source text")
     confidence: float | None = Field(None, ge=0, le=1, description="Confidence score, a value between 0 and 1")
     begin_offset: int | None = Field(None, ge=0, description="Character offset where the text span starts")
     end_offset: int | None = Field(None, ge=0, description="Character offset where the text span ends")

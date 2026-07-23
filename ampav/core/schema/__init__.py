@@ -49,6 +49,14 @@ __all__ = [
     "ToolOutput",
     "Transcript",
     "VideoOcr", "VideoPatterns", "VideoSegments",    
+
+    # Component Classes
+    "KeyPhrase",
+    "NamedEntity",
+    "ParagraphSegment",
+    "TextSpan", "TextSpans",
+    "WordSegment",
+    
 ]
 
 
