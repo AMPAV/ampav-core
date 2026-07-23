@@ -47,26 +47,25 @@ class Image(AmpAVBaseModel):
 
 class BoundingBox(AmpAVBaseModel):
     """A stereotypical bounding box"""
-    x1: int = 0
+    x: int = 0
     "Upper left corner X"
-    y1: int = 0
+    y: int = 0
     "Upper left corner y"
-    x2: int = 0
-    "Lower right corner x"
-    y2: int = 0
-    "Lower right corner y"
+    width: int = 0
+    "Width of Bounding Box"
+    height: int = 0
+    "Height of BoundingBox"
 
-    @property
-    def width(self):
-        """Bounding box width"""
-        return abs(self.x2 - self.x1)
-    
+    def get_coords(self):
+        """return a ((x1, y1), (x2, x2)) tuple of the bounding box corners.
+           assumes that the origin is in the upper left."""
+        return ((self.x, self.y), (self.x + self.width, self.y + self.height))
+        
+    def __str__(self):
+        "String representation in width x height + x offset + y offset"
+        return f"{self.width}x{self.height}+{self.x}+{self.y}"
 
-    @property
-    def height(self):
-        """Bounding box height"""
-        return abs(self.y2 - self.y1)
-    
+
 
 class OcrRegion(AmpAVBaseModel):
     """ A region of OCR Text """
