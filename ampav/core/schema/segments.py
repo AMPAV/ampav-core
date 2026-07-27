@@ -30,7 +30,7 @@ class Segment(AmpAVBaseModel):
 
 class ConfidenceSegment(Segment):
     "A segment that also has a confidence score"
-    confidence: float | None = Field(None, description="Confidence score, a value between 0 and 1, inclusive")
+    confidence: float | None = Field(None, description="Confidence score, a value between 0 and 1, inclusive", ge=0, le=1)
 
 
 class WordSegment(ConfidenceSegment):

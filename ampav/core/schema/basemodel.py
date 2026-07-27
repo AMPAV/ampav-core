@@ -10,8 +10,12 @@ class AmpAVBaseModel(BaseModel):
     # * use the docstrings on attributes rather than using just the
     #   description field so it shows up both in the generated documentation
     #   and in visual studio code
+    # * validate both assignments and the default value to ensure that the
+    #   values are legitimate.
     model_config = ConfigDict(use_enum_values=True,
-                              use_attribute_docstrings=True)
+                              use_attribute_docstrings=True,
+                              validate_assignment=True,
+                              validate_default=True)
     
     
     def model_dump_yaml(self, **kwargs) -> str:

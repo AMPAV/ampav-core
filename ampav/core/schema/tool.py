@@ -17,6 +17,9 @@ from .object import DetectedObjects
 from .video import VideoOcr, VideoPatterns, VideoSegments
 from .sentiment import Sentiments
 
+# RawData and RawBinary are intentionally excluded because they represent
+# data that will not be passed to other AMP tools since they're wholly 
+# implementation dependent and no tool should create only dead-end data.
 OutputTypes = Annotated[Union[AVMetadata, Transcript, NamedEntities, 
                               KeyPhrases, CompoundOutput,
                               AudioEffects, Image, DetectedObjects, Sentiments,

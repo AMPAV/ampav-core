@@ -14,7 +14,7 @@ class DetectedObject(AmpAVBaseModel):
     "Tool-specific label name"
     instances: list[ConfidenceSegment] = Field(default_factory=list)
     "Instances where the object appears"
-    tool_private: dict[str, Any] = Field(default_factory=dict)
+    tool_private: dict[str, Any] | None = None
     "Additional tool-specific fields"
 
 

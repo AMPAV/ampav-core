@@ -104,13 +104,15 @@ def dump_data(data: AmpAVBaseModel | dict, format: Path, output: Path=None, **kw
             output.write_text(res)
 
 
-def load_data(file: Path) -> dict:
+def load_data(file: Path, allow_pickle: bool=False) -> dict:
     """Load dict data from a file in pickle, json, or yaml format"""
     data = file.read_bytes()
-    try:
-        return pickle.loads(data)
-    except pickle.PickleError:
-        return yaml.safe_load(str(data, encoding='utf-8'))
+    if allow_pickle:
+        try:
+            return pickle.loads(data)
+        except pickle.PickleError:
+            pass
+    return yaml.safe_load(str(data, encoding='utf-8'))
     
 
 def key_finder(data: Any, key: str) -> list:
