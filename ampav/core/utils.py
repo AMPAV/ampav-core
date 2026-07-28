@@ -140,11 +140,11 @@ def key_finder(data: Any, key: str) -> list:
 def pt2seconds(pt: str) -> float:
     """Azure (and maybe others) sometimes returns times in PTxHxMxS format,
        this will parse it and return it as seconds"""
-    if m := re.match(r'PT(?P<hours>\d+H)(?P<minutes>\d+M)(?P<seconds>\d+\(.\d+)?S)', pt):
-        parts = {k: float(v) for k, v in m.groupdict().items()}
+    if m := re.match(r'PT((?P<hours>\d+)H)?((?P<minutes>\d+)M)?((?P<seconds>\d+(\.\d+)?)S)?$', pt):
+        parts = {k: float(v) if v else 0 for k, v in m.groupdict().items()}
         return (3600 * parts.get('hours', 0)) + (60 * parts.get('minutes', 0)) + parts.get('seconds', 0)
     else:
-        raise ValueError("This doesn't appear to be a Point Time")
+        raise ValueError(f"This doesn't appear to be a Point Time: {pt}, {m}")
     
 
 def seconds2pt(duration: float) -> float:
