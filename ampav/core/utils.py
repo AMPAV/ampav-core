@@ -12,6 +12,7 @@ from functools import reduce
 import json
 import sys
 from ampav.core.schema.basemodel import AmpAVBaseModel
+import re
 
 def duration2hhmmss(duration: float) -> str:
     """
@@ -134,3 +135,27 @@ def key_finder(data: Any, key: str) -> list:
             res.extend(key_finder(i, key))
 
     return res
+
+
+def pt2seconds(pt: str) -> float:
+    """Azure (and maybe others) sometimes returns times in PTxHxMxS format,
+       this will parse it and return it as seconds"""
+    if m := re.match(r'PT(?P<hours>\d+H)(?P<minutes>\d+M)(?P<seconds>\d+\(.\d+)?S)', pt):
+        parts = {k: float(v) for k, v in m.groupdict().items()}
+        return (3600 * parts.get('hours', 0)) + (60 * parts.get('minutes', 0)) + parts.get('seconds', 0)
+    else:
+        raise ValueError("This doesn't appear to be a Point Time")
+    
+
+def seconds2pt(duration: float) -> float:
+    """Convert seconds to a point in time:  PTxHxMxS"""
+    hours = int(duration / 3600)
+    duration -= hours * 3600
+    minutes = int(duration / 60)
+    seconds = duration - minutes * 60
+    if hours:
+        return f"PT{hours}H{minutes}M{seconds:0.2f}S"
+    if minutes:
+        return f"PT{minutes}M{seconds:0.2f}S"    
+    return f"PT{seconds:0.2f}S"
+    
