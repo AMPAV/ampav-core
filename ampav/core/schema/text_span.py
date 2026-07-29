@@ -26,6 +26,8 @@ class TextSpan(Segment):
 class TextSpans(AmpAVBaseModel):
     """Text spans extracted from source text."""
 
+    # BDW:  Why is this here?  This data type is exclusively for character data
+    # and does not have a temporal component.
     media_duration: float | None = Field(default=None, description="Duration of the source media, if known")
     text: str = Field(default="", description="Source text used for text span detection")
     spans: list[TextSpan] = Field(default_factory=list, description="Text spans found in the source text")

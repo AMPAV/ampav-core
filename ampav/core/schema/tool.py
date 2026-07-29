@@ -1,5 +1,7 @@
 from pydantic import Field, field_validator
 from typing import Literal, Annotated, Union, Any
+
+from ampav.core.schema.annotation import Annotations
 from .basemodel import AmpAVBaseModel
 from .av_metadata import AVMetadata
 from .transcript import Transcript
@@ -9,8 +11,19 @@ from .compound import CompoundOutput
 from ..logging import ListLoggingHandler, LOG_FORMAT
 import logging
 from logging import LogRecord
+from .audio import AudioEffects
+from .image import Image
+from .object import DetectedObjects
+from .video import VideoOcr, VideoPatterns, VideoSegments
+from .sentiment import Sentiments
 
-OutputTypes = Annotated[Union[AVMetadata, Transcript, NamedEntities, KeyPhrases, CompoundOutput], Field(discriminator='ampav_format')]
+# RawData and RawBinary are intentionally excluded because they represent
+# data that will not be passed to other AMP tools since they're wholly 
+# implementation dependent and no tool should create only dead-end data.
+OutputTypes = Annotated[Union[AVMetadata, Transcript, NamedEntities, 
+                              KeyPhrases, CompoundOutput,
+                              AudioEffects, Image, DetectedObjects, Sentiments,
+                              VideoPatterns, VideoOcr, VideoSegments, Annotations], Field(discriminator='ampav_format')]
 
 
 class ToolOutput(AmpAVBaseModel):
