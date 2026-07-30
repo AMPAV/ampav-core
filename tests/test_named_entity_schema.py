@@ -4,6 +4,7 @@ from pydantic import ValidationError
 
 from ampav.core.schema import NamedEntities, NamedEntity, ToolOutput
 from ampav.core.schema.compound import CompoundOutput
+from ampav.core.schema.named_entity import NamedEntityType
 
 
 class TestNamedEntitySchema(unittest.TestCase):
@@ -16,7 +17,7 @@ class TestNamedEntitySchema(unittest.TestCase):
                 "spans": [
                     {
                         "text": "Amazon",
-                        "entity_type": "ORGANIZATION",
+                        "label": "ORGANIZATION",
                         "confidence": 0.99,
                         "begin_offset": 24,
                         "end_offset": 30,
@@ -28,7 +29,7 @@ class TestNamedEntitySchema(unittest.TestCase):
 
         self.assertIsInstance(output.output, NamedEntities)
         self.assertEqual(output.output.spans[0].text, "Amazon")
-        self.assertEqual(output.output.spans[0].entity_type, "ORGANIZATION")
+        self.assertEqual(output.output.spans[0].label, "ORGANIZATION")
 
     def test_compound_output_accepts_named_entities(self):
         output = CompoundOutput(
@@ -38,7 +39,7 @@ class TestNamedEntitySchema(unittest.TestCase):
                     spans=[
                         NamedEntity(
                             text="Seattle",
-                            entity_type="LOCATION",
+                            label="LOCATION",
                             begin_offset=24,
                             end_offset=31,
                         )
@@ -53,7 +54,7 @@ class TestNamedEntitySchema(unittest.TestCase):
         with self.assertRaises(ValidationError):
             NamedEntity(
                 text="Amazon",
-                entity_type="ORGANIZATION",
+                label="ORGANIZATION",
                 begin_offset=30,
                 end_offset=24,
             )

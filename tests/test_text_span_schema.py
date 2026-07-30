@@ -34,8 +34,8 @@ class TestTextSpanSchema(unittest.TestCase):
         output = NamedEntities(
             text=text,
             spans=[
-                NamedEntity(text="Maya Chen", entity_type="PERSON", begin_offset=0, end_offset=9),
-                NamedEntity(text="Maya Chen", entity_type="PERSON", begin_offset=19, end_offset=28),
+                NamedEntity(text="Maya Chen", label="PERSON", begin_offset=0, end_offset=9),
+                NamedEntity(text="Maya Chen", label="PERSON", begin_offset=19, end_offset=28),
             ],
         )
 
@@ -64,7 +64,7 @@ class TestTextSpanSchema(unittest.TestCase):
 
     def test_alignment_returns_message_for_missing_offsets(self):
         words = [WordSegment(word="Amazon", start_time=1.0, end_time=1.5)]
-        output = NamedEntities(text="Amazon", spans=[NamedEntity(text="Amazon", entity_type="ORGANIZATION")])
+        output = NamedEntities(text="Amazon", spans=[NamedEntity(text="Amazon", label="ORGANIZATION")])
 
         messages = output.align_timestamps(words)
 
@@ -75,7 +75,7 @@ class TestTextSpanSchema(unittest.TestCase):
     def test_alignment_returns_message_when_source_text_is_missing(self):
         words = [WordSegment(word="Amazon", start_time=1.0, end_time=1.5)]
         output = NamedEntities(
-            spans=[NamedEntity(text="Amazon", entity_type="ORGANIZATION", begin_offset=0, end_offset=6)],
+            spans=[NamedEntity(text="Amazon", label="ORGANIZATION", begin_offset=0, end_offset=6)],
         )
 
         messages = output.align_timestamps(words)
@@ -89,7 +89,7 @@ class TestTextSpanSchema(unittest.TestCase):
         words = [WordSegment(word="Amazon", start_time=1.0, end_time=1.5)]
         output = NamedEntities(
             text="Different source text",
-            spans=[NamedEntity(text="Amazon", entity_type="ORGANIZATION", begin_offset=0, end_offset=6)],
+            spans=[NamedEntity(text="Amazon", label="ORGANIZATION", begin_offset=0, end_offset=6)],
         )
 
         messages = output.align_timestamps(words)
