@@ -29,7 +29,7 @@ class NamedEntity(TextSpan):
     """Named entity mention found in source text."""
     type: NamedEntityType = NamedEntityType.UNKNOWN
     "Named Entity Type"
-    label: str | None = None
+    label: str 
     "The raw label from the tool"
 
 

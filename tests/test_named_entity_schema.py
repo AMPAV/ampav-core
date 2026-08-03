@@ -4,7 +4,6 @@ from pydantic import ValidationError
 
 from ampav.core.schema import NamedEntities, NamedEntity, ToolOutput
 from ampav.core.schema.compound import CompoundOutput
-from ampav.core.schema.named_entity import NamedEntityType
 
 
 class TestNamedEntitySchema(unittest.TestCase):
