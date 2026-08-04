@@ -139,9 +139,9 @@ class DechunkTextSpansTest(unittest.TestCase):
 
     def test_dechunk_rebases_and_filters_overlap_results(self) -> None:
         chunk_outputs = [
-            (self.chunks[0], [NamedEntity(text="two", entity_type="NUMBER", begin_offset=4, end_offset=7)]),
-            (self.chunks[1], [NamedEntity(text="two", entity_type="NUMBER", begin_offset=4, end_offset=7)]),
-            (self.chunks[2], [NamedEntity(text="three", entity_type="NUMBER", begin_offset=4, end_offset=9)]),
+            (self.chunks[0], [NamedEntity(text="two", label="NUMBER", begin_offset=4, end_offset=7)]),
+            (self.chunks[1], [NamedEntity(text="two", label="NUMBER", begin_offset=4, end_offset=7)]),
+            (self.chunks[2], [NamedEntity(text="three", label="NUMBER", begin_offset=4, end_offset=9)]),
             (self.chunks[3], []),
         ]
 
@@ -187,7 +187,7 @@ class DechunkTextSpansTest(unittest.TestCase):
     def test_dechunk_preserves_subclass_fields_without_mutating_input(self) -> None:
         entity = NamedEntity(
             text="three",
-            entity_type="NUMBER",
+            label="NUMBER",
             confidence=0.9,
             begin_offset=4,
             end_offset=9,
@@ -203,7 +203,7 @@ class DechunkTextSpansTest(unittest.TestCase):
         spans = dechunk_text_spans(self.text, chunk_outputs)
 
         self.assertIsInstance(spans[0], NamedEntity)
-        self.assertEqual(spans[0].entity_type, "NUMBER")
+        self.assertEqual(spans[0].label, "NUMBER")
         self.assertEqual(spans[0].tool_private, {"native": True})
         self.assertEqual((entity.begin_offset, entity.end_offset), (4, 9))
         self.assertIsNot(spans[0], entity)
