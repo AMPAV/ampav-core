@@ -12,6 +12,7 @@ class NamedEntityType(StrEnum):
     Note: This initial list is based on AWS Comprehend's types
     from https://docs.aws.amazon.com/comprehend/latest/dg/how-entities.html
     """
+    COMMERCIAL_ITEM = auto()
     DATE = auto()
     EVENT = auto()
     LOCATION = auto()
@@ -38,6 +39,5 @@ class NamedEntities(TextSpans):
     ampav_format: Literal["named_entities/1"] = "named_entities/1"
     spans: list[NamedEntity] = Field(default_factory=list)
     "Named entities found in the source text"
-
 
 
