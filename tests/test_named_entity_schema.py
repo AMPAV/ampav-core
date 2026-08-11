@@ -2,11 +2,21 @@ import unittest
 
 from pydantic import ValidationError
 
-from ampav.core.schema import NamedEntities, NamedEntity, ToolOutput
+from ampav.core.schema import NamedEntities, NamedEntity, NamedEntityType, ToolOutput
 from ampav.core.schema.compound import CompoundOutput
 
 
 class TestNamedEntitySchema(unittest.TestCase):
+    def test_named_entity_preserves_specific_label_with_broad_type(self):
+        entity = NamedEntity(
+            text="Kindle",
+            type=NamedEntityType.BRAND,
+            label="COMMERCIAL_ITEM",
+        )
+
+        self.assertEqual(entity.type, "brand")
+        self.assertEqual(entity.label, "COMMERCIAL_ITEM")
+
     def test_tool_output_accepts_named_entities(self):
         output = ToolOutput(
             tool_name="aws_comprehend",
