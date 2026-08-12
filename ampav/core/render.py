@@ -3,9 +3,7 @@
 # "just works" for the common case.  But for now, I'm going to deal with them
 # here.  Also, hardcoding is dumb so don't do this for an official implementation
 
-import argparse
 import logging
-from pathlib import Path
 from typing import Any
 
 from ampav.core.schema import *
@@ -88,30 +86,3 @@ def render_html(result: Any, title: str) -> str:
     output += "  </body>\n</html>"
     return output
 
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--allow_pickle', action='store_true', help="Allow loading from a pickle file")
-    parser.add_argument('--debug', action='store_true', help="Enable debug logging")
-    parser.add_argument('--title', type=str, default=None, help="Title for the html (defaults to the input filename)")
-    parser.add_argument('input', type=Path, help="Input AMPAV file")
-    parser.add_argument('output', type=Path, help="Output HTML file")
-    args = parser.parse_args()
-
-    logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG if args.debug else logging.INFO)
-
-    logging.info(f"Loading {args.input}")
-    data = load_ampav_file(args.input, args.allow_pickle)
-
-    if args.title is None:
-        args.title = args.input.name
-    logging.info(f"Rendering HTML")
-    html = render_html(data, args.title)
-
-    logging.info(f"Writing HTML to {args.output}")
-    args.output.write_text(html)
-    
-
-if __name__ == "__main__":
-    main()

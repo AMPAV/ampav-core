@@ -113,7 +113,12 @@ def load_data(file: Path, allow_pickle: bool=False) -> dict:
             return pickle.loads(data)
         except pickle.PickleError:
             pass
-    return yaml.safe_load(str(data, encoding='utf-8'))
+    try:
+        data = str(data, encoding='utf-8')
+    except UnicodeDecodeError:
+        raise Exception("Cannot load binary file.  If it's in pickle format, allow_pickle")
+
+    return yaml.safe_load(data)
     
 
 def key_finder(data: Any, key: str) -> list:

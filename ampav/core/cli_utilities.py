@@ -3,12 +3,12 @@ import logging
 from pathlib import Path
 
 from ampav.core.logging import LOG_FORMAT, ListLoggingHandler
+from ampav.core.render import render_html
 from ampav.core.schema import load_ampav_file
-from ampav.core.schema.compound import CompoundOutput
 from ampav.core.utils import dump_data
 
 
-def cli_tool():
+def cli_compound_tool():
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true', help='Turn on debug logging')
     parser.add_argument('--allow_pickle', action='store_true', help='Allow loading pickle-formatted file')
@@ -69,4 +69,45 @@ def cli_tool():
                     
             logging.info(f"Writing {args.output} in {args.format}")
             dump_data(data, args.format, args.output)
+
+
+def cli_convert_tool():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', action='store_true', help='Turn on debug logging')
+    parser.add_argument('--allow_pickle', action='store_true', help='Allow loading pickle-formatted file')
+    parser.add_argument('input_file', type=Path, help="ampav input file")
+    parser.add_argument('--format', choices=['yaml', 'json', 'pickle'], default='yaml', help="Output file format (default yaml)")
+    parser.add_argument('output_file', type=Path, help="ampav output file")        
+    args = parser.parse_args()
+
+    logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG if args.debug else logging.INFO)
+
+    logging.info(f"Loading data file {args.input_file}")
+    data = load_ampav_file(args.input_file, args.allow_pickle)
+    logging.info(f"Writing {args.output_file} in {args.format}")
+    dump_data(data, args.format, args.output_file)
+
+
+def cli_render_tool():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--allow_pickle', action='store_true', help="Allow loading from a pickle file")
+    parser.add_argument('--debug', action='store_true', help="Enable debug logging")
+    parser.add_argument('--title', type=str, default=None, help="Title for the html (defaults to the input filename)")
+    parser.add_argument('input', type=Path, help="Input AMPAV file")
+    parser.add_argument('output', type=Path, help="Output HTML file")
+    args = parser.parse_args()
+
+    logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG if args.debug else logging.INFO)
+
+    logging.info(f"Loading {args.input}")
+    data = load_ampav_file(args.input, args.allow_pickle)
+
+    if args.title is None:
+        args.title = args.input.name
+    logging.info(f"Rendering HTML")
+    html = render_html(data, args.title)
+
+    logging.info(f"Writing HTML to {args.output}")
+    args.output.write_text(html)
+    
 
