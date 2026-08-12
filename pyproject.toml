@@ -27,6 +27,7 @@ ampav_compound = "ampav.core.compound_tool:cli_tool"
 ampav_probe_media = "ampav.core.schema.av_metadata:cli_probe_media"
 ampav_import_3play_json = "ampav.core.formats.transcript.threeplay:cli_import_threeplay_json"
 ampav_import_text_transcript = "ampav.core.formats.transcript.textfile:cli_import_text_transcript"
+ampav_render_html = "ampav.core.render:main"
 
 [project.urls]
 Homepage = "https://github.com/AMPAV/ampav-core"
