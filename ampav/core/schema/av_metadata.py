@@ -5,7 +5,6 @@ from typing import Annotated, Any
 from annotated_types import Len, Literal
 from pathlib import Path
 
-from ampav.core.schema.tool import ToolOutput
 from ampav.core.utils import dump_data
 from .basemodel import AmpAVBaseModel
 import av
@@ -171,6 +170,9 @@ class AVMetadata(AmpAVBaseModel):
 
 
 def cli_probe_media():
+    # putting the import here fixes a circular dependency when the module is 
+    # used generally.
+    from ampav.core.schema.tool import ToolOutput
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', help="Filename to probe")
     parser.add_argument('output', type=Path, help="Output file")
