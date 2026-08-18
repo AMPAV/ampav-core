@@ -70,7 +70,7 @@ def rgetattr(obj, attr, *args):
     return reduce(_getattr, [obj] + attr.split('.'))
 
 
-def dump_data(data: AmpAVBaseModel | dict, format: Path, output: Path=None, **kwargs):
+def dump_data(data: AmpAVBaseModel | dict, format: str, output: Path=None, **kwargs):
     """Dump a dict, pydantic BaseModel or AmpAVBaseModel to a Path, or stdout
        if output is None"""
     match format:

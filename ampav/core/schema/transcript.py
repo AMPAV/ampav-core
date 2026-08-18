@@ -32,7 +32,7 @@ class Transcript(AmpAVBaseModel):
     def remove_overlapping_words(self, tiebreaker: Callable | None=None,
                                  paragraph_gap: float = 1.5, 
                                  max_paragraph: float=10, 
-                                 separator: str=''):
+                                 separator: str=' '):
         self.words = remove_overlapping_words(self.words, tiebreaker)
         # at this point the paragraphs and the text is invalid, so let's fix
         # that too
@@ -62,17 +62,18 @@ def words_to_paragraphs(words: list[WordSegment],
     # paragraph no matter the timing.
     aux_paras: list[list[WordSegment]] = []
     cur_para = []
-    last_aux = (words[0].language, words[0].speaker)
-    for w in words:
-        aux = (w.language, w.speaker)
-        if aux != last_aux and cur_para:
+    if words:
+        last_aux = (words[0].language, words[0].speaker)
+        for w in words:
+            aux = (w.language, w.speaker)
+            if aux != last_aux and cur_para:
+                aux_paras.append(cur_para)
+                cur_para = [w]            
+            else:
+                cur_para.append(w)
+            last_aux = aux
+        if cur_para:
             aux_paras.append(cur_para)
-            cur_para = [w]            
-        else:
-            cur_para.append(w)
-        last_aux = aux
-    if cur_para:
-        aux_paras.append(cur_para)
 
     def dbg(words: list[WordSegment]):
         return ",".join([f"{word.to_str()}({word.start_time:0.2f},{word.end_time:0.2f})" for word in words])
@@ -100,8 +101,8 @@ def words_to_paragraphs(words: list[WordSegment],
         i = 0
         while i < len(aux_para):        
             w = aux_para[i]   
-            if not new_para:
-                print()
+            #if not new_para:
+            #    print()
             new_para.append(w)         
             if w.suffix is not None and w.suffix.strip() != '':                
                 since_last_punc = 0
@@ -152,8 +153,8 @@ def words_to_paragraphs(words: list[WordSegment],
                     pass
             i += 1
             
-    if new_para:
-        paras.append(new_para)
+        if new_para:
+            paras.append(new_para)
 
     # convert the paras array into paragraphs.
     paragraphs = []
@@ -177,31 +178,63 @@ def remove_overlapping_words(words: list[WordSegment], tiebreaker: Callable=None
         tiebreaker = lambda x: 1
 
     def overlap(w1: WordSegment, w2: WordSegment):
-        return (w2.start_time <= w1.start_time <= w2.end_time) or (w2.start_time <= w1.end_time <= w2.end_time)
+        # we're "guaranteed" that w1 starts at or after w2, since the list
+        # we're comparing is sorted by start time.  So we really only need to
+        # check to see if w1's end time > w2's start time.
+        return w1.end_time > w2.start_time
+        #return (w2.start_time <= w1.start_time <= w2.end_time) or (w2.start_time <= w1.end_time <= w2.end_time)
             
     new_words: list[WordSegment] = []
-    last_end = 0
-    while words:
-        w = words.pop(0)
-        if w.start_time >= last_end:
-            new_words.append(w)
-            last_end = w.end_time
+
+    if not words:
+        return []
+
+    def rend(w: WordSegment):
+        return f"{w.to_str()}({w.start_time:0.3f}-{w.end_time:0.3f})"
+
+    sorted_words: list[WordSegment] = sorted(words, key=lambda x: x.start_time)
+
+    # because the text likely has overlapping sections (otherwise,
+    # why would we call this?) that means we're going to have words that are
+    # duplicated, as in:
+    # another(24.880-25.240) 
+    # ' escalator(25.015-25.875)', ' escalator,(25.240-25.860)', 
+    # ' out(25.875-26.255)', ' out(25.960-26.260)', 
+    # ...
+    # so in the interest of stutterers everywhere, I'm going to look for words
+    # that have the same base word and overlap...and pick the best of the two
+
+    this_word = sorted_words.pop(0)
+    while sorted_words:
+        #print(f"::: {rend(this_word)} {[rend(x) for x in sorted_words[:5]]}")
+        next_word = sorted_words.pop(0)
+        if this_word.word.lower() == next_word.word.lower() and overlap(this_word, next_word):
+            # do something..it's a duplicate word (in theory, at least)
+            if tiebreaker(this_word) > tiebreaker(next_word):
+                #print(f">>>{rend(this_word)}<<< {rend(next_word)}")
+                new_words.append(this_word)                
+            else:
+                #print(f"{rend(this_word)} >>>{rend(next_word)}<<<")
+                new_words.append(next_word)
+            if sorted_words:
+                this_word = sorted_words.pop(0)
+            else:
+                this_word = None
         else:
-            # we have to back up from new words.     
-            backtrack = []
-            while new_words and not overlap(w, new_words[-1]):
-                backtrack.append(new_words.pop())
+            #print(f"+++{rend(this_word)}")
+            new_words.append(this_word)
+            this_word = next_word
 
-            while backtrack and words:
-                bt = backtrack.pop()
-                la = words.pop(0)
-                if tiebreaker(bt) > tiebreaker(la):
-                    new_words.append(bt)
-                    last_end = bt.end_time
-                else:
-                    new_words.append(la)
-                    last_end = la.end_time
-            if backtrack:
-                new_words.extend(backtrack)
+        # adjust the times if we need to
+        if this_word is not None and this_word.start_time < new_words[-1].end_time:
+            #print(f"Adjusting {rend(this_word)} and {rend(new_words[-1])} timestamps")
+            this_word.start_time = new_words[-1].end_time
+            if this_word.end_time < this_word.start_time:
+                this_word.start_time, this_word.end_time = this_word.end_time, this_word.start_time
+            #print(f"  --->  {rend(this_word)}")
 
+    if this_word is not None:
+        new_words.append(this_word)
+    #print("\n".join([rend(x) for x in new_words]))
+    
     return new_words
