@@ -57,8 +57,8 @@ class WordSegment(ConfidenceSegment):
             prefix = word[0]
             word = word[1:]
         else:
-            prefix = None
-        if word[-1] in ixes:
+            prefix = None        
+        if word != '' and word[-1] in ixes:
             suffix = word[-1]
             word = word[:-1]
         else:
