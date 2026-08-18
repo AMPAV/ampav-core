@@ -1,7 +1,11 @@
+import time
+
 from pydantic import Field
 from typing import Annotated, Any
 from annotated_types import Len, Literal
 from pathlib import Path
+
+from ampav.core.utils import dump_data
 from .basemodel import AmpAVBaseModel
 import av
 import av.container
@@ -76,7 +80,7 @@ class Streams(AmpAVBaseModel):
 
 class AVMetadata(AmpAVBaseModel):
     """Technical metadata for a file"""
-    ampav_format: Literal['avmetadata'] = 'avmetadata/1'
+    ampav_format: Literal['avmetadata/1'] = 'avmetadata/1'
     bit_rate: int = Field(0, description="Overall media bitrate")
     duration: float = Field(0, description="File duration, in seconds")
     format_name: str = Field('Unknown', description="Format name")
@@ -84,7 +88,7 @@ class AVMetadata(AmpAVBaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict, 
                                      description="User-defined container metadata")
     size: int = Field(0, description="File size")
-    start_time: int | None = Field(0, description="Media start time, in seconds")
+    start_time: float | None = Field(0, description="Media start time, in seconds")
     streams: Streams = Field(default_factory=Streams,
                              description="Streams in the container file")
     
@@ -166,7 +170,18 @@ class AVMetadata(AmpAVBaseModel):
 
 
 def cli_probe_media():
+    # putting the import here fixes a circular dependency when the module is 
+    # used generally.
+    from ampav.core.schema.tool import ToolOutput
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', help="Filename to probe")
+    parser.add_argument('output', type=Path, help="Output file")
+    parser.add_argument('--format', choices=['pickle', 'yaml', 'json'], default='yaml', help="Output format, default yaml")
     args = parser.parse_args()
-    print(AVMetadata.from_file(args.filename).model_dump_yaml())
+    output = ToolOutput(tool_name="ampav_probe_media",
+                        tool_version="0.1",
+                        start_time=time.time(),
+                        end_time=time.time(),
+                        output=AVMetadata.from_file(args.filename)
+                        )
+    dump_data(output, args.format, args.output)
