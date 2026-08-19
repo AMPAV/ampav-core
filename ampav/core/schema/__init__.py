@@ -19,7 +19,6 @@ from .text_span import TextSpan, TextSpans
 from .tool import ToolOutput
 from .transcript import Transcript
 from .video import VideoOcrResult, VideoOcr, VideoPatternType, VideoPattern, VideoPatterns, VideoSegmentType, VideoSegment, VideoSegments
-from ..utils import load_data
 from pathlib import Path
 
 
@@ -74,6 +73,7 @@ def load_ampav_file(path: Path, allow_pickle: bool=False) -> AmpAVDataClass:
     
     Enabling pickling support is potentially dangerous.  See https://docs.python.org/3/library/pickle.html
     """
+    from ..utils import load_data
     data = load_data(path, allow_pickle)
     return parse_ampav_data(data)
 
