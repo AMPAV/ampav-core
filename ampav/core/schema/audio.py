@@ -14,10 +14,12 @@ class AudioEffectType(StrEnum):
     "Music"
     SPEECH = auto()
     "Speech"
+    NOISE = auto()
+    "White noise or similar"
     OTHER = auto()
-    "Other Noises"
+    "Other sound"
     UNKNOWN = auto()
-    "Unknown Noise"
+    "Unknown sound"
 
 
 class AudioEffect(AmpAVBaseModel):
