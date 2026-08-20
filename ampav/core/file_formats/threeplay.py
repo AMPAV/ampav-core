@@ -1,15 +1,25 @@
+import logging
+from pathlib import Path
+import time
+
+from ampav.core.logging import LOG_FORMAT
+from ampav.core.utils import dump_data
+
 from ..schema.tool import ToolOutput
-from ..schema.transcript import Transcript, words_to_paragraphs
+from ..schema.transcript import Transcript
 from ..schema.segments import ParagraphSegment, WordSegment
 import argparse
 import json
-from .webvtt import paragraphs_to_webvtt
 from copy import deepcopy
+from ampav.core import __version__
 
 def import_threeplay_json(threeplay: dict) -> ToolOutput:
     """Take a threeplay data structure and convert it to
        a transcript tool output"""
-    
+    out = ToolOutput(tool_name="3Play",
+                     start_time=time.time(),                     
+                     tool_version=__version__)
+    out.setup_logging()
     # making lots of changes in place, so don't destroy the thing we were passed
     threeplay = deepcopy(threeplay)
     # Get media length
@@ -58,30 +68,27 @@ def import_threeplay_json(threeplay: dict) -> ToolOutput:
     words = []
     for x in paras:
         words.extend(x)
-    transcript = Transcript(text="\n".join([x.text for x in paragraphs]),                                                                         
+    out.output = Transcript(text="\n".join([x.text for x in paragraphs]),                                                                         
                             paragraphs=paragraphs,
-                            words=words)
-    out = ToolOutput(tool_name="3Play",
-                    output=transcript)
+                            words=words)    
     return out
 
 
 def cli_import_threeplay_json():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--version", action="version", version=__version__)
+    parser.add_argument("--debug", action="store_true", help="enable debug logging")
     parser.add_argument('file', help="3Play JSON file")
-    parser.add_argument("--webvtt", action="store_true", help="Dump webvtt instead of yaml")
+    parser.add_argument('output', type=Path, help="output file")
+    parser.add_argument("--format", choices=['yaml', 'json', 'pickle'], default='yaml', help="Output format, default yaml")
     args = parser.parse_args()
+    logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG if args.debug else logging.INFO)
     with open(args.file) as f:
         data = json.load(f)
 
     xscript = import_threeplay_json(data)
-    #print(xscript.output.paragraphs)
-    if args.webvtt:
-        # we're going to restructure the paragraphs that came from 3play to
-        # make them more VTT friendly.
-        print(paragraphs_to_webvtt(words_to_paragraphs(xscript.output.words)))
-    else:
-        print(xscript.model_dump_yaml())
+    xscript.parameters['filename'] = str(args.file)
+    dump_data(xscript, args.format, args.output)
 
 
 if __name__ == "__main__":

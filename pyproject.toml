@@ -1,6 +1,6 @@
 [project]
 name = "ampav-core"
-version = "0.0.21"
+dynamic = ["version"]
 description = "Core Libraries/Schemas/Utilties for the AMPAV environment"
 readme = "README.md"
 license = "Apache-2.0"
@@ -26,9 +26,10 @@ dependencies = [
 ampav_compound = "ampav.core.cli_utilities:cli_compound_tool"
 ampav_convert = "ampav.core.cli_utilities:cli_convert_tool"
 ampav_probe_media = "ampav.core.schema.av_metadata:cli_probe_media"
-ampav_import_3play_json = "ampav.core.formats.transcript.threeplay:cli_import_threeplay_json"
-ampav_import_text_transcript = "ampav.core.formats.transcript.textfile:cli_import_text_transcript"
+ampav_import_3play_json = "ampav.core.file_formats.threeplay:cli_import_threeplay_json"
+ampav_import_text_transcript = "ampav.core.file_formats.textfile:cli_import_text_transcript"
 ampav_render_html = "ampav.core.cli_utilities:cli_render_tool"
+ampav_transcript_to_webvtt = "ampav.core.file_formats.webvtt:cli_transcript_to_webvtt"
 
 [project.urls]
 Homepage = "https://github.com/AMPAV/ampav-core"
@@ -40,3 +41,6 @@ Issues = "https://github.com/AMPAV/ampav-core/issues"
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "ampav.core.__version__"}

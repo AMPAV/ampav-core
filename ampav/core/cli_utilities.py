@@ -6,10 +6,11 @@ from ampav.core.logging import LOG_FORMAT, ListLoggingHandler
 from ampav.core.render import render_html
 from ampav.core.schema import load_ampav_file
 from ampav.core.utils import dump_data
-
+from . import __version__
 
 def cli_compound_tool():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument('--debug', action='store_true', help='Turn on debug logging')
     parser.add_argument('--allow_pickle', action='store_true', help='Allow loading pickle-formatted file')
     subp = parser.add_subparsers(dest='command', required=True)
@@ -73,6 +74,7 @@ def cli_compound_tool():
 
 def cli_convert_tool():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument('--debug', action='store_true', help='Turn on debug logging')
     parser.add_argument('--allow_pickle', action='store_true', help='Allow loading pickle-formatted file')
     parser.add_argument('input_file', type=Path, help="ampav input file")
@@ -90,6 +92,7 @@ def cli_convert_tool():
 
 def cli_render_tool():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument('--allow_pickle', action='store_true', help="Allow loading from a pickle file")
     parser.add_argument('--debug', action='store_true', help="Enable debug logging")
     parser.add_argument('--title', type=str, default=None, help="Title for the html (defaults to the input filename)")
