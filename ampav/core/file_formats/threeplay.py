@@ -71,6 +71,7 @@ def import_threeplay_json(threeplay: dict) -> ToolOutput:
     out.output = Transcript(text="\n".join([x.text for x in paragraphs]),                                                                         
                             paragraphs=paragraphs,
                             words=words)    
+    out.end_time = time.time()
     return out
 
 
