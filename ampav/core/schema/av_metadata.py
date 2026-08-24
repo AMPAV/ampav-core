@@ -1,3 +1,4 @@
+import logging
 import time
 
 from pydantic import Field
@@ -5,11 +6,14 @@ from typing import Annotated, Any
 from annotated_types import Len, Literal
 from pathlib import Path
 
+from ampav.core.logging import LOG_FORMAT
+
 
 from .basemodel import AmpAVBaseModel
 import av
 import av.container
 import argparse
+from ampav.core import __version__
 
 class AudioStream(AmpAVBaseModel):
     """
@@ -175,12 +179,15 @@ def cli_probe_media():
     from ampav.core.schema.tool import ToolOutput
     from ampav.core.utils import dump_data
     parser = argparse.ArgumentParser()
+    parser.add_argument("--version", action="version", version=__version__)
+    parser.add_argument("--debug", action='store_true', help="Enable debug logging")
     parser.add_argument('filename', help="Filename to probe")
     parser.add_argument('output', type=Path, help="Output file")
     parser.add_argument('--format', choices=['pickle', 'yaml', 'json'], default='yaml', help="Output format, default yaml")
     args = parser.parse_args()
+    logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG if args.debug else logging.INFO)
     output = ToolOutput(tool_name="ampav_probe_media",
-                        tool_version="0.1",
+                        tool_version=__version__,
                         start_time=time.time(),
                         end_time=time.time(),
                         output=AVMetadata.from_file(args.filename)
