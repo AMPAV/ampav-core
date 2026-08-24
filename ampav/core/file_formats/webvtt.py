@@ -32,6 +32,6 @@ def cli_transcript_to_webvtt():
     logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG if args.debug else logging.INFO)                        
     transcript = load_ampav_file(args.file, args.allow_pickle)
 
-    print(paragraphs_to_webvtt(transcript.output.paragraphs))
+    args.output.write_text(paragraphs_to_webvtt(transcript.output.paragraphs))
 
     
