@@ -93,6 +93,51 @@ class ChunkedAudio:
             yield current_time, np.array(samples, dtype=np.int16).astype(np.float32) / 32768.0
 
 
+    def get_fixed_chunks(self, chunk_length: int, pad: bool=False) -> Iterator[tuple[float, Any]]:
+        """the fixed-length chunking iterator
+
+        Args:
+            chunk_length (int): How many samples per chunk
+            pad (bool, optional): Whether or not to pad the last chunk
+
+        Yields:
+            Iterator[tuple[float, Any]]: The starting time of the samples, and the samples themselves
+        """
+        import numpy as np
+
+        # Variation of the methodology originally implemented.  The chunks will
+        # always be the chunk duration (except for the last, of course), but
+        # the start time of the 2nd chunk and beyond will be chunk_overlap
+        # seconds back.  We're going to just return the start time of the samples
+        # and the samples themselves.
+        
+        current_time = 0
+        samples = []
+        for frame in av.open(self.filename).decode(audio=self.stream):            
+            out_frames = self.resampler.resample(frame)
+            for out_frame in out_frames:              
+                next_frame = out_frame.to_ndarray()[0]                                
+                samples.extend(next_frame)                
+                while len(samples) >= chunk_length:
+                    # get our correct-sized chunk and save the remainder
+                    this_chunk = samples[:chunk_length]
+                    samples = samples[chunk_length:]
+
+                    logging.debug(f"Yielding chunk of {len(this_chunk)} samples ({len(this_chunk)/self.sample_rate} seconds).  Current time {current_time}")
+                    yield current_time, np.array(this_chunk, dtype=np.int16).astype(np.float32)/32768.0
+                    current_time += len(this_chunk) / self.sample_rate
+
+
+        if samples:
+            # if we've buffered some chunks but didn't get enough data for a yield
+            if len(samples) < chunk_length and pad:
+                samples = samples + [0] * (chunk_length - len(samples))
+            logging.debug(f"Final chunk of {len(samples)} samples, ({len(samples)/self.sample_rate} seconds). Current time: {current_time}")
+            yield current_time, np.array(samples, dtype=np.int16).astype(np.float32) / 32768.0
+
+
+
+
     def __exit__(self, exc_type, exc_value, traceback):
         pass
 
