@@ -3,6 +3,7 @@ from typing import Any, Iterator
 import av
 import av.audio.resampler
 from pathlib import Path
+from .schema.image import Image, SerializableImage
 
 # so...ampav.core doesn't include numpy by default (since who knows what version
 # some random tool will need), so we'll import it where it's actually used so
@@ -188,3 +189,31 @@ def load_and_resample_audio_file(filename: Path, stream: int,
     #print(samples.shape, samples.dtype)
     input_container.close()
     return channels, sample_rate, samples
+
+
+
+def get_frames_from_video(filename: Path, stream: int, frame_list: list[float]) ->list[Image]:
+    container = av.open(filename)
+    stream: av.VideoStream = container.streams.video[stream]
+    # sort the offsets so I'm only seeking forward and convert them to presentation
+    # timestamps (PTS) by dividing by the time base
+    
+    result: list[Image] = []
+    for frame_time in sorted(frame_list):
+        frame_pts = int(frame_time / stream.time_base)
+        # seek to the nearest keyframe (any_frame=False) that's 
+        # before (backward=True) our desired PTS.  
+        container.seek(frame_pts, stream=stream, any_frame=False, backward=True)
+        # decode forward until we find our actual frame...
+        for frame in container.decode(stream):
+            if frame.pts >= frame_pts:
+                # this is our stop.
+                result.append(Image(filename=f"{filename.name}_{frame_time}.png",
+                                    image=frame.to_image()))                
+                break
+        else:
+            logging.warning(f"Skipping frame at pts {frame_pts} because it couldn not be found.")
+            result.append(None)
+
+    container.close()
+    return result
