@@ -38,7 +38,9 @@ def render_html(result: Any, title: str) -> str:
             case dict():
                 x = "<table><tr><th>Key</th><th>Value</th></tr>"
                 for k, v in data.items():
-                    x += f"<tr><td>{escape(k)}</td><td>{dump_structure(v)}</td></tr>"
+                    if isinstance(k, str):
+                        k = escape(k)
+                    x += f"<tr><td>{k}</td><td>{dump_structure(v)}</td></tr>"
                 x += "</table>"
                 return x
             case int():
