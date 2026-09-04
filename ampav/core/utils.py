@@ -163,4 +163,19 @@ def seconds2pt(duration: float) -> float:
     if minutes:
         return f"PT{minutes}M{seconds:0.2f}S"    
     return f"PT{seconds:0.2f}S"
-    
+
+
+def size2human(size: int) -> str:
+    """Convert a size to a human-readable size, using power of 2 prefixes as one should"""
+    units = {'PB': 1024**5, 
+             'TB': 1024**4,
+             'GB': 1024**3,
+             'MB': 1024**2,
+             'KB': 1024**1,
+             'B':  1024**0
+             }
+    for unit, value in units.items():
+        x = size / value
+        if x > 1:
+            return f"{x:0.3f}{unit}"
+    return str(size)
