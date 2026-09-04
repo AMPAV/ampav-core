@@ -136,9 +136,6 @@ class ChunkedAudio:
             logging.debug(f"Final chunk of {len(samples)} samples, ({len(samples)/self.sample_rate} seconds). Current time: {current_time}")
             yield current_time, np.array(samples, dtype=np.int16).astype(np.float32) / 32768.0
 
-
-
-
     def __exit__(self, exc_type, exc_value, traceback):
         pass
 
@@ -191,8 +188,7 @@ def load_and_resample_audio_file(filename: Path, stream: int,
     return channels, sample_rate, samples
 
 
-
-def get_frames_from_video(filename: Path, stream: int, frame_list: list[float]) ->dict[float, Image]:
+def get_frames_from_video(filename: Path, stream: int, frame_list: list[float]) -> Iterator[tuple[float, Image]]:
     """Return a dictionary of images keyed by the time and the value is the 
        image itself, or None if no suitable image could be found.
 
@@ -202,14 +198,12 @@ def get_frames_from_video(filename: Path, stream: int, frame_list: list[float]) 
         frame_list (list[float]): List of time offsets for the images
 
     Returns:
-        dict[float, Image]: Images found at the times, or None if there's no image there.
+        Iterator[tuple[float, Image]]: Images found at the times, or None if there's no image there.
     """
     container = av.open(filename)
     stream: av.VideoStream = container.streams.video[stream]
     # sort the offsets so I'm only seeking forward and convert them to presentation
     # timestamps (PTS) by dividing by the time base
-    
-    result: dict[float, Image] = {}
     for frame_time in sorted(frame_list):
         frame_pts = int(frame_time / stream.time_base)
         # seek to the nearest keyframe (any_frame=False) that's 
@@ -219,12 +213,11 @@ def get_frames_from_video(filename: Path, stream: int, frame_list: list[float]) 
         for frame in container.decode(stream):
             if frame.pts >= frame_pts:
                 # this is our stop.
-                result[frame_time] = (Image(filename=f"{filename.name}_{frame_time}.png",
-                                            image=frame.to_image()))                
+                yield (frame_time, Image(filename=f"{filename.name}_{frame_time}.png",
+                                            image=frame.to_image()))              
                 break
         else:
-            logging.warning(f"Skipping frame at pts {frame_pts} because it couldn not be found.")
-            result[frame_time] = None
-
+            logging.warning(f"Skipping frame at pts {frame_pts} because it could not be found.")
+            yield (frame_time, None)        
     container.close()
-    return result
+    
